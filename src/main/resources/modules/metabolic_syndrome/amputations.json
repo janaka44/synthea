@@ -21,10 +21,10 @@
         {
           "system": "SNOMED-CT",
           "code": "185347001",
-          "display": "Encounter for problem"
+          "display": "Encounter for problem (procedure)"
         }
       ],
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "remarks": [
         "lower limb amputation occurs in 0.65% of the diabetic population",
         " with upper limb amputation occurring in an ever fewer 0.034%",
@@ -96,7 +96,7 @@
         {
           "system": "SNOMED-CT",
           "code": "180030006",
-          "display": "Amputation of left foot"
+          "display": "Amputation of the foot (procedure)"
         }
       ],
       "duration": {
@@ -104,7 +104,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Foot_Amputation"
     },
     "Potential_Amputation_of_Right_Foot": {
@@ -137,7 +137,7 @@
         {
           "system": "SNOMED-CT",
           "code": "180030006",
-          "display": "Amputation of right foot"
+          "display": "Amputation of the foot (procedure)"
         }
       ],
       "duration": {
@@ -145,7 +145,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Foot_Amputation"
     },
     "Potential_Amputation_of_Left_Leg": {
@@ -169,7 +169,7 @@
         {
           "system": "SNOMED-CT",
           "code": "79733001",
-          "display": "Amputation of left leg"
+          "display": "Amputation above-knee (procedure)"
         }
       ],
       "duration": {
@@ -177,7 +177,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Lower_Limb_Amputation"
     },
     "Potential_Amputation_of_Right_Leg": {
@@ -201,7 +201,7 @@
         {
           "system": "SNOMED-CT",
           "code": "79733001",
-          "display": "Amputation of right leg"
+          "display": "Amputation above-knee (procedure)"
         }
       ],
       "duration": {
@@ -209,7 +209,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Lower_Limb_Amputation"
     },
     "History_of_Lower_Limb_Amputation": {
@@ -221,7 +221,8 @@
           "display": "History of lower limb amputation (situation)"
         }
       ],
-      "direct_transition": "Recovery_After_Amputation"
+      "direct_transition": "Recovery_After_Amputation",
+      "assign_to_attribute": "last_amputation"
     },
     "History_of_Foot_Amputation": {
       "type": "ConditionOnset",
@@ -232,7 +233,8 @@
           "display": "History of amputation of foot (situation)"
         }
       ],
-      "direct_transition": "Recovery_After_Amputation"
+      "direct_transition": "Recovery_After_Amputation",
+      "assign_to_attribute": "last_amputation"
     },
     "Potential_Amputation_of_Left_Hand": {
       "type": "Simple",
@@ -264,7 +266,7 @@
         {
           "system": "SNOMED-CT",
           "code": "46028000",
-          "display": "Amputation of left hand"
+          "display": "Amputation of hand (procedure)"
         }
       ],
       "duration": {
@@ -272,7 +274,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Hand_Amputation"
     },
     "Potential_Amputation_of_Right_Hand": {
@@ -305,7 +307,7 @@
         {
           "system": "SNOMED-CT",
           "code": "46028000",
-          "display": "Amputation of right hand"
+          "display": "Amputation of hand (procedure)"
         }
       ],
       "duration": {
@@ -313,7 +315,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Hand_Amputation"
     },
     "Potential_Amputation_of_Right_Arm": {
@@ -337,7 +339,7 @@
         {
           "system": "SNOMED-CT",
           "code": "13995008",
-          "display": "Amputation of right arm"
+          "display": "Amputation of arm through shoulder (procedure)"
         }
       ],
       "duration": {
@@ -345,7 +347,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Upper_Limb_Amputation"
     },
     "Potential_Amputation_of_Left_Arm": {
@@ -369,7 +371,7 @@
         {
           "system": "SNOMED-CT",
           "code": "13995008",
-          "display": "Amputation of left arm"
+          "display": "Amputation of arm through shoulder (procedure)"
         }
       ],
       "duration": {
@@ -377,7 +379,7 @@
         "high": 4,
         "unit": "hours"
       },
-      "reason": "Diagnose_Neuropathy",
+      "reason": "diabetic_neuropathy",
       "direct_transition": "History_of_Upper_Limb_Amputation"
     },
     "History_of_Upper_Limb_Amputation": {
@@ -389,7 +391,8 @@
           "display": "History of upper limb amputation (situation)"
         }
       ],
-      "direct_transition": "Recovery_After_Amputation"
+      "direct_transition": "Recovery_After_Amputation",
+      "assign_to_attribute": "last_amputation"
     },
     "History_of_Hand_Amputation": {
       "type": "ConditionOnset",
@@ -400,16 +403,27 @@
           "display": "History of disarticulation at wrist (situation)"
         }
       ],
-      "direct_transition": "Recovery_After_Amputation"
+      "direct_transition": "Recovery_After_Amputation",
+      "assign_to_attribute": "last_amputation"
     },
     "Recovery_After_Amputation": {
-      "type": "Delay",
-      "range": {
-        "low": 3,
-        "high": 6,
-        "unit": "weeks"
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "386510005",
+          "display": "Amputation care (regime/therapy)"
+        }
+      ],
+      "distribution": {
+        "kind": "EXPONENTIAL",
+        "parameters": {
+          "mean": 30
+        }
       },
-      "direct_transition": "End_Amputation_Encounter"
+      "unit": "days",
+      "direct_transition": "End_Amputation_Encounter",
+      "reason": "last_amputation"
     },
     "End_Amputation_Encounter": {
       "type": "EncounterEnd",
@@ -418,5 +432,6 @@
     "Terminal": {
       "type": "Terminal"
     }
-  }
+  },
+  "gmf_version": 2
 }

@@ -13,13 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.text.WordUtils;
 import org.mitre.synthea.export.JSONSkip;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomNumberGenerator;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.world.concepts.Employment;
 
 public class Location implements Serializable {
   private static final long serialVersionUID = 1L;
@@ -27,7 +27,7 @@ public class Location implements Serializable {
   private static Map<String, String> timezones = loadTimezones();
   private static Map<String, List<String>> foreignPlacesOfBirth = loadCitiesByLanguage();
   private static final String COUNTRY_CODE = Config.get("generate.geography.country_code");
-
+  private static CMSStateCodeMapper cmsStateCodeMapper = new CMSStateCodeMapper();
   private long totalPopulation;
 
   // cache the population by city name for performance
@@ -105,7 +105,7 @@ public class Location implements Serializable {
     String filename = null;
     try {
       filename = Config.get("generate.geography.zipcodes.default_file");
-      String csv = Utilities.readResource(filename);
+      String csv = Utilities.readResource(filename, true, true);
       List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
 
       zipCodes = new HashMap<>();
@@ -131,7 +131,7 @@ public class Location implements Serializable {
     try {
       filename = Config.get("generate.geography.sdoh.default_file",
         "geography/sdoh.csv");
-      String csv = Utilities.readResource(filename);
+      String csv = Utilities.readResource(filename, true, true);
       List<? extends Map<String,String>> sdohList = SimpleCSV.parse(csv);
 
       for (Map<String,String> line : sdohList) {
@@ -163,7 +163,7 @@ public class Location implements Serializable {
         Map<String, Double> determinants = socialDeterminantsOfHealth.get(county);
         for (String determinant : determinants.keySet()) {
           Double probability = determinants.get(determinant);
-          Double sum = averages.getOrDefault(determinant, new Double(0));
+          Double sum = averages.getOrDefault(determinant, 0.0);
           averages.put(determinant, probability + sum);
         }
       }
@@ -208,12 +208,16 @@ public class Location implements Serializable {
       zipsForCity = zipCodes.get(cityName + " Town");
     }
 
-    if (zipsForCity == null || zipsForCity.isEmpty()) {
-      results.add("00000"); // if we don't have the city, just use a dummy
-    } else if (zipsForCity.size() >= 1) {
+    if (zipsForCity != null && zipsForCity.size() >= 1) {
       for (Place place : zipsForCity) {
-        results.add(place.postalCode);
+        if (place.postalCode != null && !place.postalCode.isEmpty()) {
+          results.add(place.postalCode);
+        }
       }
+    }
+
+    if (results.isEmpty()) {
+      results.add("00000"); // if we don't have the city, just use a dummy
     }
 
     return results;
@@ -384,14 +388,21 @@ public class Location implements Serializable {
    * @param person The person to assign attributes.
    */
   public void setSocialDeterminants(Person person) {
-    String county = (String) person.attributes.get("county");
-    if (county == null) {
+    String county = (String) person.attributes.get(Person.COUNTY);
+    if (county == null || !socialDeterminantsOfHealth.containsKey(county)) {
       county = "AVERAGE";
     }
     Map<String, Double> sdoh = socialDeterminantsOfHealth.get(county);
     if (sdoh != null) {
       for (String determinant : sdoh.keySet()) {
         Double probability = sdoh.get(determinant);
+        if (determinant.equals(Person.UNEMPLOYED)) {
+          if (probability == null) {
+            throw new IllegalStateException("Unable to determine unemployment probability");
+          }
+          person.attributes.put(Person.UNEMPLOYED, false);
+          person.attributes.put(Person.EMPLOYMENT_MODEL, new Employment(probability));
+        }
         person.attributes.put(determinant, (person.rand() <= probability));
       }
     }
@@ -402,7 +413,7 @@ public class Location implements Serializable {
     String filename = null;
     try {
       filename = Config.get("generate.geography.zipcodes.default_file");
-      String csv = Utilities.readResource(filename);
+      String csv = Utilities.readResource(filename, true, true);
       List<? extends Map<String,String>> ziplist = SimpleCSV.parse(csv);
 
       for (Map<String,String> line : ziplist) {
@@ -463,7 +474,7 @@ public class Location implements Serializable {
     String filename = null;
     try {
       filename = Config.get("generate.geography.timezones.default_file");
-      String csv = Utilities.readResource(filename);
+      String csv = Utilities.readResource(filename, true, true);
       List<? extends Map<String,String>> tzlist = SimpleCSV.parse(csv);
 
       for (Map<String,String> line : tzlist) {
@@ -499,7 +510,7 @@ public class Location implements Serializable {
   protected static Map<String, List<String>> loadCitiesByLanguage(String resource) {
     Map<String, List<String>> foreignPlacesOfBirth = new HashMap<>();
     try {
-      String json = Utilities.readResource(resource);
+      String json = Utilities.readResourceOrPath(resource);
       foreignPlacesOfBirth = new Gson().fromJson(json, HashMap.class);
     } catch (Exception e) {
       System.err.println("ERROR: unable to load foreign places of birth");
@@ -517,5 +528,14 @@ public class Location implements Serializable {
    */
   public static String getTimezoneByState(String state) {
     return timezones.get(state);
+  }
+
+  /**
+   * Get the FIPS code, if it exists, for a given zip code.
+   * @param zipCode The zip code of the location.
+   * @return The FIPS county code of the location.
+   */
+  public static String getFipsCodeByZipCode(String zipCode) {
+    return Location.cmsStateCodeMapper.zipToFipsCountyCode(zipCode);
   }
 }

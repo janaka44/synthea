@@ -34,7 +34,6 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomCodeGenerator;
-import org.mitre.synthea.helpers.RandomNumberGenerator;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.modules.QualityOfLifeModule;
 import org.mitre.synthea.world.agents.Clinician;
@@ -55,7 +54,7 @@ import org.mitre.synthea.world.concepts.HealthRecord.Medication;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
 import org.mitre.synthea.world.concepts.HealthRecord.Procedure;
 import org.mitre.synthea.world.concepts.HealthRecord.Supply;
-import org.mitre.synthea.world.concepts.healthinsurance.CoverageRecord.PlanRecord;
+import org.mitre.synthea.world.concepts.healthinsurance.PlanRecord;
 
 /**
  * Researchers have requested a simple table-based format that could easily be
@@ -159,6 +158,9 @@ public class CSVExporter {
 
   /**
    * Thread-safe monotonically increasing transactionId.
+   * NOTE: This is intentionally unique per-run rather than per-patient,
+   * which means that the claim_transactions.chargeid column will not be consistent
+   * when recreating a population using multiple threads.
    */
   private AtomicLong transactionId;
 
@@ -178,7 +180,6 @@ public class CSVExporter {
 
       if (Config.getAsBoolean("exporter.csv.folder_per_run")) {
         // we want a folder per run, so name it based on the timestamp
-        // TODO: do we want to consider names based on the current generation options?
         String timestamp = ExportHelper.iso8601Timestamp(System.currentTimeMillis());
         String subfolderName = timestamp.replaceAll("\\W+", "_"); // make sure it's filename-safe
         outputDirectory = outputDirectory.resolve(subfolderName);
@@ -296,8 +297,9 @@ public class CSVExporter {
    */
   private void writeCSVHeaders() throws IOException {
     patients.write("Id,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,"
-        + "PREFIX,FIRST,LAST,SUFFIX,MAIDEN,MARITAL,RACE,ETHNICITY,GENDER,BIRTHPLACE,"
-        + "ADDRESS,CITY,STATE,COUNTY,ZIP,LAT,LON,HEALTHCARE_EXPENSES,HEALTHCARE_COVERAGE,INCOME");
+        + "PREFIX,FIRST,MIDDLE,LAST,SUFFIX,MAIDEN,MARITAL,RACE,ETHNICITY,GENDER,BIRTHPLACE,"
+        + "ADDRESS,CITY,STATE,COUNTY,FIPS,ZIP,LAT,LON,"
+        + "HEALTHCARE_EXPENSES,HEALTHCARE_COVERAGE,INCOME");
     patients.write(NEWLINE);
     allergies.write("START,STOP,PATIENT,ENCOUNTER,CODE,SYSTEM,DESCRIPTION,TYPE,CATEGORY,"
         + "REACTION1,DESCRIPTION1,SEVERITY1,REACTION2,DESCRIPTION2,SEVERITY2");
@@ -306,14 +308,14 @@ public class CSVExporter {
         "START,STOP,PATIENT,PAYER,ENCOUNTER,CODE,DESCRIPTION,BASE_COST,PAYER_COVERAGE,DISPENSES,"
         + "TOTALCOST,REASONCODE,REASONDESCRIPTION");
     medications.write(NEWLINE);
-    conditions.write("START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION");
+    conditions.write("START,STOP,PATIENT,ENCOUNTER,SYSTEM,CODE,DESCRIPTION");
     conditions.write(NEWLINE);
     careplans.write(
         "Id,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION");
     careplans.write(NEWLINE);
     observations.write("DATE,PATIENT,ENCOUNTER,CATEGORY,CODE,DESCRIPTION,VALUE,UNITS,TYPE");
     observations.write(NEWLINE);
-    procedures.write("START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,BASE_COST,"
+    procedures.write("START,STOP,PATIENT,ENCOUNTER,SYSTEM,CODE,DESCRIPTION,BASE_COST,"
         + "REASONCODE,REASONDESCRIPTION");
     procedures.write(NEWLINE);
     immunizations.write("DATE,PATIENT,ENCOUNTER,CODE,DESCRIPTION,BASE_COST");
@@ -334,7 +336,7 @@ public class CSVExporter {
     organizations.write("Id,NAME,ADDRESS,CITY,STATE,ZIP,LAT,LON,PHONE,REVENUE,UTILIZATION");
     organizations.write(NEWLINE);
     providers.write("Id,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,LAT,LON,"
-        + "UTILIZATION");
+        + "ENCOUNTERS,PROCEDURES");
     providers.write(NEWLINE);
     payers.write("Id,NAME,OWNERSHIP,ADDRESS,CITY,STATE_HEADQUARTERED,ZIP,PHONE,AMOUNT_COVERED,"
         + "AMOUNT_UNCOVERED,REVENUE,COVERED_ENCOUNTERS,UNCOVERED_ENCOUNTERS,COVERED_MEDICATIONS,"
@@ -424,7 +426,7 @@ public class CSVExporter {
       payers.flush();
     }
     // Export No Insurance statistics
-    payer(PayerManager.noInsurance);
+    payer(PayerManager.getNoInsurancePlan().getPayer());
     payers.flush();
   }
 
@@ -434,10 +436,14 @@ public class CSVExporter {
    *
    * @throws IOException if any IO errors occur.
    */
-  private void exportPayerTransitions(Person person, long stopTime) throws IOException {
-    for (PlanRecord plan : person.coverage.getPlanHistory()) {
-      if (plan.start <= stopTime) {
-        payerTransition(person, plan);
+  private void exportPayerTransitions(Person person, long cutOffTime, long stopTime)
+      throws IOException {
+    List<PlanRecord> sortedPlanRecords = person.coverage.getPlanHistory().stream()
+        .sorted(Comparator.comparingLong(PlanRecord::getStartTime))
+        .collect(Collectors.toList());
+    for (PlanRecord planRecord : sortedPlanRecords) {
+      if ((planRecord.getStartTime() <= stopTime) && (planRecord.getStopTime() >= cutOffTime)) {
+        payerTransition(person, planRecord);
       }
     }
     payerTransitions.flush();
@@ -449,9 +455,13 @@ public class CSVExporter {
    *
    * @throws IOException if any IO errors occur.
    */
-  private void exportPatientExpenses(Person person, long stopTime) throws IOException {
-    for (PlanRecord planRecord : person.coverage.getPlanHistory()) {
-      if (planRecord.start <= stopTime) {
+  private void exportPatientExpenses(Person person, long cutOffTime, long stopTime)
+      throws IOException {
+    List<PlanRecord> sortedPlanRecords = person.coverage.getPlanHistory().stream()
+        .sorted(Comparator.comparingLong(PlanRecord::getStartTime))
+        .collect(Collectors.toList());
+    for (PlanRecord planRecord : sortedPlanRecords) {
+      if ((planRecord.getStartTime() <= stopTime) && (planRecord.getStopTime() >= cutOffTime)) {
         patientExpense(person, planRecord);
       }
     }
@@ -471,8 +481,8 @@ public class CSVExporter {
 
     for (Encounter encounter : person.record.encounters) {
 
-      String encounterID = encounter(person, personID, encounter);
-      String payerID = encounter.claim.plan.getPayer().uuid;
+      String encounterID = encounter(personID, encounter);
+      String payerID = encounter.claim.getPayer().uuid;
 
       claim(person, encounter.claim, encounter, encounterID, time);
 
@@ -512,11 +522,11 @@ public class CSVExporter {
       }
 
       for (CarePlan careplan : encounter.careplans) {
-        careplan(person, personID, encounterID, careplan);
+        careplan(personID, encounterID, careplan);
       }
 
       for (ImagingStudy imagingStudy : encounter.imagingStudies) {
-        imagingStudy(person, personID, encounterID, imagingStudy);
+        imagingStudy(personID, encounterID, imagingStudy);
       }
 
       for (Device device : encounter.devices) {
@@ -527,14 +537,14 @@ public class CSVExporter {
         supply(personID, encounterID, encounter, supply);
       }
     }
-    CSVExporter.getInstance().exportPayerTransitions(person, time);
-    CSVExporter.getInstance().exportPatientExpenses(person, time);
     int yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
     Calendar cutOff = new GregorianCalendar(1900, 0, 1);
     if (yearsOfHistory > 0) {
       cutOff = Calendar.getInstance();
       cutOff.set(cutOff.get(Calendar.YEAR) - yearsOfHistory, 0, 1);
     }
+    CSVExporter.getInstance().exportPayerTransitions(person, cutOff.getTimeInMillis(), time);
+    CSVExporter.getInstance().exportPatientExpenses(person, cutOff.getTimeInMillis(), time);
     Calendar now = Calendar.getInstance();
     Calendar birthDay = Calendar.getInstance();
     birthDay.setTimeInMillis((long) person.attributes.get(Person.BIRTHDATE));
@@ -591,7 +601,7 @@ public class CSVExporter {
   private String patient(Person person, long time) throws IOException {
     // Id,BIRTHDATE,DEATHDATE,SSN,DRIVERS,PASSPORT,PREFIX,
     // FIRST,LAST,SUFFIX,MAIDEN,MARITAL,RACE,ETHNICITY,GENDER,BIRTHPLACE,ADDRESS
-    // CITY,STATE,COUNTY,ZIP,LAT,LON,HEALTHCARE_EXPENSES,HEALTHCARE_COVERAGE,INCOME
+    // CITY,STATE,COUNTY,FIPS,ZIP,LAT,LON,HEALTHCARE_EXPENSES,HEALTHCARE_COVERAGE,INCOME
     String personID = (String) person.attributes.get(Person.ID);
 
     // check if we've already exported this patient demographic data yet,
@@ -615,6 +625,7 @@ public class CSVExporter {
         Person.IDENTIFIER_PASSPORT,
         Person.NAME_PREFIX,
         Person.FIRST_NAME,
+        Person.MIDDLE_NAME,
         Person.LAST_NAME,
         Person.NAME_SUFFIX,
         Person.MAIDEN_NAME,
@@ -626,7 +637,8 @@ public class CSVExporter {
         Person.ADDRESS,
         Person.CITY,
         Person.STATE,
-        "county",
+        Person.COUNTY,
+        Person.FIPS,
         Person.ZIP,
     }) {
       String value = (String) person.attributes.getOrDefault(attribute, "");
@@ -635,7 +647,7 @@ public class CSVExporter {
     // LAT,LON
     s.append(',').append(person.getY()).append(',').append(person.getX()).append(',');
     // HEALTHCARE_EXPENSES
-    s.append(person.coverage.getTotalHealthcareExpenses()).append(',');
+    s.append(person.coverage.getTotalOutOfPocketExpenses()).append(',');
     // HEALTHCARE_COVERAGE
     s.append(person.coverage.getTotalCoverage()).append(',');
     // INCOME
@@ -654,19 +666,18 @@ public class CSVExporter {
   /**
    * Write a single Encounter line to encounters.csv.
    *
-   * @param rand      Source of randomness to use when generating ids etc
    * @param personID  The ID of the person that had this encounter
    * @param encounter The encounter itself
    * @return The encounter ID, to be referenced as a "foreign key" if necessary
    * @throws IOException if any IO error occurs
    */
-  private String encounter(RandomNumberGenerator rand, String personID,
+  private String encounter(String personID,
           Encounter encounter) throws IOException {
     // Id,START,STOP,PATIENT,ORGANIZATION,PROVIDER,PAYER,ENCOUNTERCLASS,CODE,DESCRIPTION,
     // BASE_ENCOUNTER_COST,TOTAL_CLAIM_COST,PAYER_COVERAGE,REASONCODE,REASONDESCRIPTION
     StringBuilder s = new StringBuilder();
 
-    String encounterID = rand.randUUID().toString();
+    String encounterID = encounter.uuid.toString();
     // ID
     s.append(encounterID).append(',');
     // START
@@ -692,8 +703,8 @@ public class CSVExporter {
       s.append(',');
     }
     // PAYER
-    if (encounter.claim.plan.getPayer() != null) {
-      s.append(encounter.claim.plan.getPayer().getResourceID()).append(',');
+    if (encounter.claim.getPayer() != null) {
+      s.append(encounter.claim.getPayer().getResourceID()).append(',');
     } else {
       s.append(',');
     }
@@ -717,7 +728,7 @@ public class CSVExporter {
     // TOTAL_COST
     s.append(String.format(Locale.US, "%.2f", encounter.claim.getTotalClaimCost())).append(',');
     // PAYER_COVERAGE
-    s.append(String.format(Locale.US, "%.2f", encounter.claim.getCoveredCost())).append(',');
+    s.append(String.format(Locale.US, "%.2f", encounter.claim.getTotalCoveredCost())).append(',');
     // REASONCODE & REASONDESCRIPTION
     if (encounter.reason == null) {
       s.append(",");
@@ -741,7 +752,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private void condition(String personID, String encounterID, Entry condition) throws IOException {
-    // START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION
+    // START,STOP,PATIENT,ENCOUNTER,SYSTEM,CODE,DESCRIPTION
     StringBuilder s = new StringBuilder();
 
     s.append(dateFromTimestamp(condition.start)).append(',');
@@ -754,6 +765,7 @@ public class CSVExporter {
 
     Code coding = condition.codes.get(0);
 
+    s.append(coding.system).append(',');
     s.append(coding.code).append(',');
     s.append(clean(coding.display));
 
@@ -892,7 +904,7 @@ public class CSVExporter {
    */
   private void procedure(String personID, String encounterID,
       Procedure procedure) throws IOException {
-    // START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,COST,REASONCODE,REASONDESCRIPTION
+    // START,STOP,PATIENT,ENCOUNTER,SYSTEM,CODE,DESCRIPTION,COST,REASONCODE,REASONDESCRIPTION
     StringBuilder s = new StringBuilder();
 
     s.append(iso8601Timestamp(procedure.start)).append(',');
@@ -904,6 +916,7 @@ public class CSVExporter {
     s.append(encounterID).append(',');
     // CODE
     Code coding = procedure.codes.get(0);
+    s.append(coding.system).append(',');
     s.append(coding.code).append(',');
     // DESCRIPTION
     s.append(clean(coding.display)).append(',');
@@ -956,7 +969,7 @@ public class CSVExporter {
     BigDecimal cost = medication.getCost();
     s.append(String.format(Locale.US, "%.2f", cost)).append(',');
     // PAYER_COVERAGE
-    s.append(String.format(Locale.US, "%.2f", medication.claim.getCoveredCost())).append(',');
+    s.append(String.format(Locale.US, "%.2f", medication.claim.getTotalCoveredCost())).append(',');
     long dispenses = 1; // dispenses = refills + original
     // makes the math cleaner and more explicit. dispenses * unit cost = total cost
 
@@ -1037,18 +1050,17 @@ public class CSVExporter {
   /**
    * Write a single CarePlan to careplans.csv.
    *
-   * @param rand        Source of randomness to use when generating ids etc
    * @param personID    ID of the person prescribed the careplan.
    * @param encounterID ID of the encounter where the careplan was prescribed
    * @param careplan    The careplan itself
    * @throws IOException if any IO error occurs
    */
-  private String careplan(RandomNumberGenerator rand, String personID, String encounterID,
+  private String careplan(String personID, String encounterID,
       CarePlan careplan) throws IOException {
     // Id,START,STOP,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION
     StringBuilder s = new StringBuilder();
 
-    String careplanID = rand.randUUID().toString();
+    String careplanID = careplan.uuid.toString();
     s.append(careplanID).append(',');
     s.append(dateFromTimestamp(careplan.start)).append(',');
     if (careplan.stop != 0L) {
@@ -1080,19 +1092,18 @@ public class CSVExporter {
   /**
    * Write a single ImagingStudy to imaging_studies.csv.
    *
-   * @param rand         Source of randomness to use when generating ids etc
    * @param personID     ID of the person the ImagingStudy was taken of.
    * @param encounterID  ID of the encounter where the ImagingStudy was performed
    * @param imagingStudy The ImagingStudy itself
    * @throws IOException if any IO error occurs
    */
-  private String imagingStudy(RandomNumberGenerator rand, String personID, String encounterID,
+  private String imagingStudy(String personID, String encounterID,
       ImagingStudy imagingStudy) throws IOException {
     // Id,DATE,PATIENT,ENCOUNTER,SERIES_UID,BODYSITE_CODE,BODYSITE_DESCRIPTION,
     // MODALITY_CODE,MODALITY_DESCRIPTION,INSTANCE_UID,SOP_CODE,SOP_DESCRIPTION,PROCEDURE_CODE
     StringBuilder s = new StringBuilder();
 
-    String studyID = rand.randUUID().toString();
+    String studyID = imagingStudy.uuid.toString();
 
     for (ImagingStudy.Series series: imagingStudy.series) {
       String seriesDicomUid = series.dicomUid;
@@ -1224,7 +1235,7 @@ public class CSVExporter {
    * @throws IOException if any IO error occurs
    */
   private void provider(Clinician provider, String orgId) throws IOException {
-    // Id,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,UTILIZATION
+    // Id,ORGANIZATION,NAME,GENDER,SPECIALITY,ADDRESS,CITY,STATE,ZIP,ENCOUNTERS,PROCEDURES
 
     StringBuilder s = new StringBuilder();
     s.append(provider.getResourceID()).append(',');
@@ -1237,7 +1248,8 @@ public class CSVExporter {
     }
     s.append(provider.getY()).append(',');
     s.append(provider.getX()).append(',');
-    s.append(provider.getEncounterCount());
+    s.append(provider.getEncounterCount()).append(',');
+    s.append(provider.getProcedureCount());
 
     s.append(NEWLINE);
 
@@ -1315,20 +1327,20 @@ public class CSVExporter {
     }
     s.append(",");
     // START_YEAR
-    s.append(iso8601Timestamp(planRecord.start)).append(',');
+    s.append(iso8601Timestamp(planRecord.getStartTime())).append(',');
     // END_YEAR
-    s.append(iso8601Timestamp(planRecord.stop)).append(',');
+    s.append(iso8601Timestamp(planRecord.getStopTime())).append(',');
     // PAYER_ID
-    s.append(planRecord.plan.getPayer().getResourceID()).append(',');
+    s.append(planRecord.getPlan().getPayer().getResourceID()).append(',');
     // SECONDARY_PAYER_ID
-    if (planRecord.secondaryPlan.getPayer() != null && !planRecord.secondaryPlan.getPayer()
-        .isNoInsurance()) {
-      s.append(planRecord.secondaryPlan.getPayer().getResourceID());
+    if (planRecord.getSecondaryPlan().getPayer() != null
+        && !planRecord.getSecondaryPlan().isNoInsurance()) {
+      s.append(planRecord.getSecondaryPlan().getPayer().getResourceID());
     }
     s.append(',');
     // PLAN_OWNERSHIP
-    if (planRecord.owner != null) {
-      s.append(planRecord.owner);
+    if (planRecord.ownership != null) {
+      s.append(planRecord.ownership);
     }
     s.append(',');
     // OWNERNAME
@@ -1346,14 +1358,14 @@ public class CSVExporter {
     // PATIENT_ID
     s.append(person.attributes.get(Person.ID)).append(",");
     // YEAR
-    s.append(iso8601Timestamp(planRecord.start)).append(',');
+    s.append(iso8601Timestamp(planRecord.getStartTime())).append(',');
     // PAYER_ID
-    s.append(planRecord.plan.getPayer().getResourceID()).append(',');
+    s.append(planRecord.getPlan().getPayer().getResourceID()).append(',');
     // HEALTHCARE_EXPENSES
-    double healthcareExpenses = planRecord.getHealthcareExpenses().doubleValue();
+    double healthcareExpenses = planRecord.getOutOfPocketExpenses().doubleValue();
     s.append(healthcareExpenses).append(',');
     // INSURANCE_COSTS
-    double insuranceCosts = planRecord.getInsuranceCosts().doubleValue();
+    double insuranceCosts = planRecord.getInsuranceExpenses().doubleValue();
     s.append(insuranceCosts).append(',');
     // COVERED_COSTS
     double coveredExpenses = planRecord.getCoveredExpenses().doubleValue();
@@ -1393,7 +1405,7 @@ public class CSVExporter {
    * @param claim The claim to be exported.
    * @throws IOException if any IO error occurs.
    */
-  private void claim(RandomNumberGenerator rand, Claim claim, Encounter encounter,
+  private void claim(Person person, Claim claim, Encounter encounter,
       String encounterID, long time) throws IOException {
     // Id,PATIENTID,PROVIDERID,PRIMARYPATIENTINSURANCEID,SECONDARYPATIENTINSURANCEID,
     // DEPARTMENTID,PATIENTDEPARTMENTID,DIAGNOSIS1,DIAGNOSIS2,DIAGNOSIS3,DIAGNOSIS4,
@@ -1410,7 +1422,7 @@ public class CSVExporter {
 
     StringBuilder s = new StringBuilder();
     // Claim Id. Should be a number.
-    String claimId = rand.randUUID().toString();
+    String claimId = claim.uuid.toString();
     s.append(claimId).append(',');
     // PATIENTID
     s.append(claim.person.attributes.get(Person.ID)).append(',');
@@ -1421,18 +1433,18 @@ public class CSVExporter {
       s.append(',');
     }
     // PRIMARYPATIENTINSURANCEID
-    if (encounter.claim.plan.getPayer() == null
-        || encounter.claim.plan.isNoInsurance()) {
-      s.append("0,"); // 0 == No Insurance
+    if (encounter.claim.getPayer() == null
+        || encounter.claim.getPayer().isNoInsurance()) {
+      s.append(","); // Empty for no insurance
     } else {
-      s.append(claim.plan.getPayer().getResourceID()).append(',');
+      s.append(claim.getPayer().getResourceID()).append(',');
     }
     // SECONDARYPATIENTINSURANCEID (0 default if none)
-    if (encounter.claim.secondaryPlan == null
-        || encounter.claim.secondaryPlan.isNoInsurance()) {
-      s.append("0,");
+    if (encounter.claim.getSecondaryPayer() == null
+        || encounter.claim.getSecondaryPayer().isNoInsurance()) {
+      s.append(",");
     } else {
-      s.append(claim.secondaryPlan.getPayer().getResourceID()).append(',');
+      s.append(claim.getSecondaryPayer().getResourceID()).append(',');
     }
     // DEPARTMENTID
     String departmentId = claimDepartmentCode(encounter, claim.person);
@@ -1491,8 +1503,8 @@ public class CSVExporter {
       // STATUS1 for Payer1
       s.append("CLOSED,");
       // STATUS2 for Payer2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         s.append("CLOSED,");
       } else {
         s.append(',');
@@ -1502,8 +1514,8 @@ public class CSVExporter {
       // OUTSTANDING1
       s.append("0,");
       // OUTSTANDING2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         s.append("0,");
       } else {
         s.append(',');
@@ -1513,8 +1525,8 @@ public class CSVExporter {
       // LASTBILLEDDATE1
       s.append(iso8601Timestamp(encounter.stop)).append(',');
       // LASTBILLEDDATE2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         s.append(iso8601Timestamp(encounter.stop)).append(',');
       } else {
         s.append(',');
@@ -1527,8 +1539,8 @@ public class CSVExporter {
       // STATUS1 for Payer1
       s.append("BILLED,");
       // STATUS2 for Payer2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         s.append("BILLED,");
       } else {
         s.append(',');
@@ -1536,23 +1548,25 @@ public class CSVExporter {
       // STATUSP for Patient as Payer
       s.append("BILLED,");
       // OUTSTANDING1 (TODO this should be the outstanding payer balance)
-      s.append(String.format(Locale.US, "%.2f", encounter.claim.getCoveredCost())).append(',');
+      s.append(String.format(Locale.US, "%.2f", encounter.claim.getTotalCoveredCost()))
+              .append(',');
       // OUTSTANDING2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         // TODO this is not correct
-        s.append(String.format(Locale.US, "%.2f", encounter.claim.getCoveredCost())).append(',');
+        s.append(String.format(Locale.US, "%.2f", encounter.claim.getTotalCoveredCost()))
+                .append(',');
       } else {
         s.append(',');
       }
       // OUTSTANDINGP (TODO this should be the outstanding patient balance)
-      BigDecimal patientCost = claim.getTotalClaimCost().subtract(claim.getCoveredCost());
+      BigDecimal patientCost = claim.getTotalClaimCost().subtract(claim.getTotalCoveredCost());
       s.append(String.format(Locale.US, "%.2f", patientCost)).append(',');
       // LASTBILLEDDATE1
       s.append(iso8601Timestamp(encounter.start)).append(',');
       // LASTBILLEDDATE2
-      if (claim.secondaryPlan != null
-          && claim.secondaryPlan.isNoInsurance()) {
+      if (claim.getSecondaryPayer() != null
+          && claim.getSecondaryPayer().isNoInsurance()) {
         s.append(iso8601Timestamp(encounter.start)).append(',');
       } else {
         s.append(',');
@@ -1568,8 +1582,8 @@ public class CSVExporter {
       s.append("1,");
     }
     // HEALTHCARECLAIMTYPEID2
-    if (claim.secondaryPlan != null
-        && claim.secondaryPlan.isNoInsurance()) {
+    if (claim.getSecondaryPayer() != null
+        && claim.getSecondaryPayer().isNoInsurance()) {
       if (institutional) {
         s.append('2');
       } else {
@@ -1582,7 +1596,7 @@ public class CSVExporter {
     write(s.toString(), claims);
 
     // Main Claim
-    simulateClaimProcess(rand, claim, claimId, encounter, encounterID, claim.mainEntry,
+    simulateClaimProcess(person, claim, claimId, encounter, encounterID, claim.mainEntry,
         diagnosisCodes, departmentId, true);
 
     // Each Entry...
@@ -1592,24 +1606,24 @@ public class CSVExporter {
       if ((entry instanceof HealthRecord.Procedure)
           || (entry instanceof HealthRecord.Immunization)
           || (entry instanceof HealthRecord.Medication)) {
-        simulateClaimProcess(rand, claim, claimId, encounter, encounterID, claimEntry,
+        simulateClaimProcess(person, claim, claimId, encounter, encounterID, claimEntry,
             diagnosisCodes, departmentId, false);
       }
     }
   }
 
-  private void simulateClaimProcess(RandomNumberGenerator rand, Claim claim, String claimId,
+  private void simulateClaimProcess(Person person, Claim claim, String claimId,
       Encounter encounter, String encounterId, Claim.ClaimEntry claimEntry,
       String[] diagnosisCodes, String departmentId, boolean mainEntry) throws IOException {
     long chargeId = transactionId.getAndIncrement();
     // CHARGE
     ClaimTransaction t = new ClaimTransaction(encounter, encounterId,
-        claim, claimId, chargeId, claimEntry, rand);
+        claim, claimId, chargeId, claimEntry, person);
     t.type = ClaimTransactionType.CHARGE;
     t.setAmount(claimEntry.cost);
     t.departmentId = departmentId;
     t.diagnosisCodes = diagnosisCodes;
-    if (claim.plan.isNoInsurance()) {
+    if (claim.getPayer().isNoInsurance()) {
       t.transferType = "p";
     } else {
       t.transferType = "1";
@@ -1627,7 +1641,7 @@ public class CSVExporter {
           remainder = Claim.ZERO_CENTS;
         }
         t = new ClaimTransaction(encounter, encounterId,
-            claim, claimId, chargeId, claimEntry, rand);
+            claim, claimId, chargeId, claimEntry, person);
         t.type = ClaimTransactionType.PAYMENT;
         t.method = PaymentMethod.COPAY;
         t.payment = claimEntry.copayPaidByPatient;
@@ -1646,7 +1660,7 @@ public class CSVExporter {
         remainder = Claim.ZERO_CENTS;
       }
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.ADJUSTMENT;
       t.method = PaymentMethod.SYSTEM;
       t.adjustment = claimEntry.adjustment;
@@ -1662,7 +1676,7 @@ public class CSVExporter {
       // PAYMENT FROM INSURANCE
       remainder = remainder.subtract(payerAmount);
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.PAYMENT;
       t.method = PaymentMethod.ECHECK;
       t.payment = payerAmount;
@@ -1677,7 +1691,7 @@ public class CSVExporter {
     if (secondaryPayerAmount.compareTo(Claim.ZERO_CENTS) > 0) {
       // TRANSFEROUT
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.TRANSFEROUT;
       t.amount = remainder;
       t.unpaid = remainder;
@@ -1689,7 +1703,7 @@ public class CSVExporter {
 
       // TRANSFERIN
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.TRANSFERIN;
       t.transferType = "2"; // "2" if secondary insurance
       t.transferId = transferOut;
@@ -1705,7 +1719,7 @@ public class CSVExporter {
 
       // PAYMENT
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.PAYMENT;
       t.method = PaymentMethod.ECHECK;
       t.payment = secondaryPayerAmount;
@@ -1717,10 +1731,10 @@ public class CSVExporter {
     }
 
     if (remainder.compareTo(Claim.ZERO_CENTS) > 0) {
-      if (claim.plan != PayerManager.getNoInsurancePlan()) {
+      if (!claim.getPayer().isNoInsurance()) {
         // TRANSFEROUT
         t = new ClaimTransaction(encounter, encounterId,
-            claim, claimId, chargeId, claimEntry, rand);
+            claim, claimId, chargeId, claimEntry, person);
         t.type = ClaimTransactionType.TRANSFEROUT;
         t.amount = remainder;
         t.unpaid = remainder;
@@ -1732,7 +1746,7 @@ public class CSVExporter {
 
         // TRANSFERIN
         t = new ClaimTransaction(encounter, encounterId,
-            claim, claimId, chargeId, claimEntry, rand);
+            claim, claimId, chargeId, claimEntry, person);
         t.type = ClaimTransactionType.TRANSFERIN;
         t.transferType = "p"; // patient
         t.transferId = transferOut;
@@ -1745,12 +1759,13 @@ public class CSVExporter {
       }
       // PAYMENT
       t = new ClaimTransaction(encounter, encounterId,
-          claim, claimId, chargeId, claimEntry, rand);
+          claim, claimId, chargeId, claimEntry, person);
       t.type = ClaimTransactionType.PAYMENT;
-      String[] opts = { PaymentMethod.CASH.toString(),
-          PaymentMethod.CHECK.toString(),
-          PaymentMethod.CC.toString()};
-      t.method = PaymentMethod.valueOf(rand.rand(opts));
+      PaymentMethod[] opts = { PaymentMethod.CASH,
+          PaymentMethod.CHECK,
+          PaymentMethod.CC};
+      // a choice that "looks random" but is consistent when chargeID is consistent
+      t.method = opts[(int)(chargeId % opts.length)];
       t.payment = remainder;
       t.unpaid = Claim.ZERO_CENTS;
       t.departmentId = departmentId;
@@ -1803,19 +1818,19 @@ public class CSVExporter {
      * @param claimId The Claim ID.
      * @param chargeId The Charge ID.
      * @param claimEntry The entry for the transactions.
-     * @param rand A random number generator.
+     * @param person The Person.
      */
     public ClaimTransaction(Encounter encounter, String encounterId, Claim claim, String claimId,
-        long chargeId, Claim.ClaimEntry claimEntry, RandomNumberGenerator rand) {
-      this.id = rand.randUUID().toString();
+        long chargeId, Claim.ClaimEntry claimEntry, Person person) {
+      // NOTE: see note above about the transactionId field
+      // ID here will only be consistent if chargeID is consistent
+      this.id = ExportHelper.buildUUID(person, encounter.start,
+          "ClaimTransaction for Claim " + claimId + " " + chargeId);
       this.encounterId = encounterId;
       this.claimId = claimId;
       this.chargeId = chargeId;
       this.patientId = (String) claim.person.attributes.get(Person.ID);
-      PlanRecord plan = claim.person.coverage.getPlanRecordAtTime(encounter.start);
-      if (plan != null) {
-        this.memberId = plan.id;
-      }
+      this.memberId = claim.getPlanRecordMemberId();
       this.units = 1;
       this.start = claimEntry.entry.start;
       this.stop = claimEntry.entry.stop;

@@ -23,12 +23,29 @@ public class ValidationResources {
   private FhirValidator validatorR4;
   static final Logger logger = LoggerFactory.getLogger(ValidationResources.class);
 
+  private ValidationResources() {
+    // private - use the factory
+  }
+
   /**
-   * Create FHIR context, validator, and validation chain.
+   * Create FHIR context, validator, and validation chain for FHIR STU3.
    */
-  public ValidationResources() {
-    initializeSTU3();
-    initializeR4();
+  public static ValidationResources forSTU3() {
+    ValidationResources vr = new ValidationResources();
+    vr.initializeSTU3();
+    return vr;
+  }
+
+  /**
+   * Create FHIR context, validator, and validation chain for FHIR R4.
+   * US Core 3, 4, 5, and 6 support is optional; only one may be loaded at a time.
+   *
+   * @param usCoreVersion The version of US Core definitions to load
+   */
+  public static ValidationResources forR4(FhirR4.USCoreVersion usCoreVersion) {
+    ValidationResources vr = new ValidationResources();
+    vr.initializeR4(usCoreVersion);
+    return vr;
   }
 
   private void initializeSTU3() {
@@ -47,19 +64,19 @@ public class ValidationResources {
     validatorSTU3 = ctx.newValidator().registerValidatorModule(instanceValidator);
   }
 
-  private void initializeR4() {
+  private void initializeR4(FhirR4.USCoreVersion usCoreVersion) {
     FhirContext ctx = FhirR4.getContext();
     FhirInstanceValidator instanceValidator =
         new FhirInstanceValidator(ctx);
     ValidationSupportChain chain = new ValidationSupportChain(
-            new ValidationSupportR4(ctx),
+            new ValidationSupportR4(ctx, usCoreVersion),
             new DefaultProfileValidationSupport(ctx),
             new CommonCodeSystemsTerminologyService(ctx),
             new InMemoryTerminologyServerValidationSupport(ctx)
     );
     instanceValidator.setValidationSupport(chain);
     instanceValidator.setAnyExtensionsAllowed(true);
-    instanceValidator.setErrorForUnknownProfiles(false);
+    instanceValidator.setErrorForUnknownProfiles(true);
     validatorR4 = ctx.newValidator().registerValidatorModule(instanceValidator);
   }
 

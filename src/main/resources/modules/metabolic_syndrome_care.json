@@ -7,12 +7,13 @@
       "remarks": [
         "Initial impl == direct translation of ruby module"
       ],
-      "direct_transition": "Wellness_Encounter"
+      "direct_transition": "Metabolic_Syndrome_Review_Reason"
     },
     "Wellness_Encounter": {
       "type": "Encounter",
       "wellness": true,
-      "direct_transition": "check CKD"
+      "direct_transition": "check CKD",
+      "reason": "metabolic_syndrome_review"
     },
     "Check_Diabetes": {
       "type": "Simple",
@@ -77,7 +78,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 80394007,
+          "code": "80394007",
           "display": "Hyperglycemia (disorder)"
         }
       ],
@@ -106,7 +107,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 302870006,
+          "code": "302870006",
           "display": "Hypertriglyceridemia (disorder)"
         }
       ],
@@ -161,7 +162,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 237602007,
+          "code": "237602007",
           "display": "Metabolic syndrome X (disorder)"
         }
       ],
@@ -287,15 +288,26 @@
       "remarks": [
         "setting prediabetes as severity 0 makes some things easier"
       ],
-      "direct_transition": "Diagnose_Prediabetes"
+      "conditional_transition": [
+        {
+          "transition": "Check_CarePlan",
+          "condition": {
+            "condition_type": "PriorState",
+            "name": "Diagnose_Diabetes"
+          }
+        },
+        {
+          "transition": "Diagnose_Prediabetes"
+        }
+      ]
     },
     "Diagnose_Prediabetes": {
       "type": "ConditionOnset",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": "15777000",
-          "display": "Prediabetes"
+          "code": "714628002",
+          "display": "Prediabetes (finding)"
         }
       ],
       "assign_to_attribute": "diabetes_stage",
@@ -331,7 +343,7 @@
         {
           "system": "SNOMED-CT",
           "code": "44054006",
-          "display": "Diabetes"
+          "display": "Diabetes mellitus type 2 (disorder)"
         }
       ],
       "assign_to_attribute": "diabetes_stage",
@@ -346,8 +358,8 @@
             "codes": [
               {
                 "system": "SNOMED-CT",
-                "code": "698360004",
-                "display": "Diabetes self management plan"
+                "code": "735985000",
+                "display": "Diabetes self management plan (record artifact)"
               }
             ]
           },
@@ -363,20 +375,20 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": "698360004",
-          "display": "Diabetes self management plan"
+          "code": "735985000",
+          "display": "Diabetes self management plan (record artifact)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
           "code": "160670007",
-          "display": "Diabetic diet"
+          "display": "Diabetic diet (finding)"
         },
         {
           "system": "SNOMED-CT",
           "code": "229065009",
-          "display": "Exercise therapy"
+          "display": "Exercise therapy (regime/therapy)"
         }
       ],
       "goals": [
@@ -390,7 +402,7 @@
               }
             ],
             "operator": "<",
-            "value": "7.0"
+            "value": 7
           },
           "addresses": [
             "diabetes_stage"
@@ -406,7 +418,7 @@
               }
             ],
             "operator": "<",
-            "value": "108"
+            "value": 108
           },
           "addresses": [
             "diabetes_stage"
@@ -435,12 +447,12 @@
         "based on https://github.com/clinical-cloud/sample-careplans"
       ],
       "reason": "diabetes_stage",
-      "direct_transition": "Prescribe_Medications"
+      "direct_transition": "Glucose_Monitor"
     },
     "Prescribe_Medications": {
       "type": "CallSubmodule",
       "submodule": "metabolic_syndrome/medications",
-      "direct_transition": "Check_Complications"
+      "direct_transition": "DME and Supplies"
     },
     "Check_Complications": {
       "type": "Simple",
@@ -598,7 +610,8 @@
           "display": "Neuropathy due to type 2 diabetes mellitus (disorder)"
         }
       ],
-      "direct_transition": "Consider_Procedures"
+      "direct_transition": "Consider_Procedures",
+      "assign_to_attribute": "diabetic_neuropathy"
     },
     "End_Neuropathy": {
       "type": "ConditionEnd",
@@ -719,6 +732,30 @@
     "End_Wellness_Encounter": {
       "type": "EncounterEnd",
       "direct_transition": "Wellness_Encounter"
+    },
+    "Glucose_Monitor": {
+      "type": "Device",
+      "code": {
+        "system": "SNOMED-CT",
+        "code": "337414009",
+        "display": "Blood glucose meter (physical object)"
+      },
+      "direct_transition": "Prescribe_Medications"
+    },
+    "DME and Supplies": {
+      "type": "CallSubmodule",
+      "submodule": "metabolic_syndrome/dme_supplies",
+      "direct_transition": "Check_Complications"
+    },
+    "Metabolic_Syndrome_Review_Reason": {
+      "type": "SetAttribute",
+      "attribute": "metabolic_syndrome_review",
+      "direct_transition": "Wellness_Encounter",
+      "value_code": {
+        "system": "SNOMED-CT",
+        "code": "763288003",
+        "display": "Patient review (procedure)"
+      }
     }
   },
   "gmf_version": 1

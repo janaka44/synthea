@@ -20,9 +20,11 @@ import org.mitre.synthea.helpers.TrendingValueGenerator;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.modules.BloodPressureValueGenerator.SysDias;
 import org.mitre.synthea.world.agents.Person;
+import org.mitre.synthea.world.agents.behaviors.planeligibility.QualifyingConditionCodesEligibility;
 import org.mitre.synthea.world.concepts.BMI;
 import org.mitre.synthea.world.concepts.BiometricsConfig;
 import org.mitre.synthea.world.concepts.BirthStatistics;
+import org.mitre.synthea.world.concepts.Employment;
 import org.mitre.synthea.world.concepts.GrowthChart;
 import org.mitre.synthea.world.concepts.GrowthChartEntry;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
@@ -39,6 +41,8 @@ public final class LifecycleModule extends Module {
       GrowthChart.loadCharts();
   private static final List<LinkedHashMap<String, String>> weightForLengthChart =
       loadWeightForLengthChart();
+  private static final QualifyingConditionCodesEligibility disabilityCriteria =
+      loadDisabilityData();
   private static final String AGE = "AGE";
   private static final String AGE_MONTHS = "AGE_MONTHS";
   public static final String DAYS_UNTIL_DEATH = "days_until_death";
@@ -81,6 +85,18 @@ public final class LifecycleModule extends Module {
     return soDistribution;
   }
 
+  private static QualifyingConditionCodesEligibility loadDisabilityData() {
+    QualifyingConditionCodesEligibility criteria = null;
+    String filename = "payers/eligibility_input_files/ssd_eligibility.csv";
+    try {
+      criteria = new QualifyingConditionCodesEligibility(filename);
+    } catch (Exception e) {
+      System.err.println("ERROR: unable to load disability csv: " + filename);
+      e.printStackTrace();
+    }
+    return criteria;
+  }
+
   public Module clone() {
     return this;
   }
@@ -105,6 +121,10 @@ public final class LifecycleModule extends Module {
     adherence(person, time);
     calculateVitalSigns(person, time);
     calculateFallRisk(person, time);
+    person.attributes.put(Person.DISABLED, isDisabled(person, time));
+    if (person.ageInYears(time) >= 18) {
+      ((Employment) person.attributes.get(Person.EMPLOYMENT_MODEL)).checkEmployment(person, time);
+    }
     death(person, time);
 
     // java modules will never "finish"
@@ -164,9 +184,11 @@ public final class LifecycleModule extends Module {
     String city = (String) attributes.get(Person.CITY);
     Location location = (Location) attributes.get(Person.LOCATION);
     if (location != null) {
-      // should never happen in practice, but can happen in unit tests
+      // A null location should never happen in practice, but can happen in unit tests
       location.assignPoint(person, city);
-      person.attributes.put(Person.ZIP, location.getZipCode(city, person));
+      String zipCode = location.getZipCode(city, person);
+      person.attributes.put(Person.ZIP, zipCode);
+      person.attributes.put(Person.FIPS, Location.getFipsCodeByZipCode(zipCode));
       String[] birthPlace;
       if ("english".equalsIgnoreCase((String) attributes.get(Person.FIRST_LANGUAGE))) {
         birthPlace = location.randomBirthPlace(person);
@@ -307,7 +329,7 @@ public final class LifecycleModule extends Module {
           }
         }
         break;
-      case 27:
+      case 28:
         // get married
         if (person.attributes.get(Person.MARITAL_STATUS) == null) {
           Boolean getsMarried = (person.rand() < 0.8);
@@ -343,6 +365,60 @@ public final class LifecycleModule extends Module {
           List<String> suffixList = Arrays.asList("PhD", "JD", "MD");
           person.attributes.put(Person.NAME_SUFFIX,
               suffixList.get(person.randInt(suffixList.size())));
+        }
+        break;
+      case 35:
+        if (person.attributes.get(Person.MARITAL_STATUS + "Decade3") == null) {
+          // divorce and widowing...
+          // gross approximations for next 10 years based on:
+          // https://www.census.gov/content/dam/Census/library/publications/2021/demo/p70-167.pdf
+          if (person.attributes.get(Person.MARITAL_STATUS).equals("M")) {
+            double check = person.rand();
+            if (check < 0.02) {
+              // widow
+              person.attributes.put(Person.MARITAL_STATUS, "W");
+            } else if (check < 0.20) {
+              // divorce
+              person.attributes.put(Person.MARITAL_STATUS, "D");
+            }
+          }
+          person.attributes.put(Person.MARITAL_STATUS + "Decade3", true);
+        }
+        break;
+      case 45:
+        if (person.attributes.get(Person.MARITAL_STATUS + "Decade4") == null) {
+          // divorce and widowing...
+          // gross approximations for next 10 years based on:
+          // https://www.census.gov/content/dam/Census/library/publications/2021/demo/p70-167.pdf
+          if (person.attributes.get(Person.MARITAL_STATUS).equals("M")) {
+            double check = person.rand();
+            if (check < 0.03) {
+              // widow
+              person.attributes.put(Person.MARITAL_STATUS, "W");
+            } else if (check < 0.05) {
+              // divorce
+              person.attributes.put(Person.MARITAL_STATUS, "D");
+            }
+          }
+          person.attributes.put(Person.MARITAL_STATUS + "Decade4", true);
+        }
+        break;
+      case 55:
+        if (person.attributes.get(Person.MARITAL_STATUS + "Decade5") == null) {
+          // divorce and widowing...
+          // gross approximations for next 10 years based on:
+          // https://www.census.gov/content/dam/Census/library/publications/2021/demo/p70-167.pdf
+          if (person.attributes.get(Person.MARITAL_STATUS).equals("M")) {
+            double check = person.rand();
+            if (check < 0.06) {
+              // widow
+              person.attributes.put(Person.MARITAL_STATUS, "W");
+            } else if (check < 0.11) {
+              // divorce
+              person.attributes.put(Person.MARITAL_STATUS, "D");
+            }
+          }
+          person.attributes.put(Person.MARITAL_STATUS + "Decade5", true);
         }
         break;
       default:
@@ -653,7 +729,7 @@ public final class LifecycleModule extends Module {
       // for patients without diabetes
       // source for the below: https://www.cdc.gov/nchs/data/databriefs/db363-h.pdf
       // NCHS Data Brief - No. 363 - April 2020
-      // Total and High-density Lipoprotein Cholesterol in Adults: United States, 2015–2018
+      // Total and High-density Lipoprotein Cholesterol in Adults: United States, 2015-2018
       boolean lowHDL;
       boolean highTotalChol;
       if (person.attributes.containsKey("low_hdl")) {
@@ -674,7 +750,7 @@ public final class LifecycleModule extends Module {
         person.attributes.put("low_hdl", lowHDL);
 
         // from the above source:
-        //  "During 2015–2018, 11.4% of adults had high total cholesterol,
+        //  "During 2015-2018, 11.4% of adults had high total cholesterol,
         //   and prevalence was similar by race and Hispanic origin."
         highTotalChol = person.rand() < .114;
         person.attributes.put("high_total_chol", highTotalChol);
@@ -1112,6 +1188,35 @@ public final class LifecycleModule extends Module {
       // TODO - research actual effectiveness of these interventions
 
       person.attributes.put("probability_of_fall_injury", fallRisk);
+    }
+  }
+
+  /**
+   * Determines if the person is disabled according to input file
+   * criteria. If the input file is unavailable, the default is false.
+   * @param person The person.
+   * @param time The time.
+   * @return true or false.
+   */
+  public static boolean isDisabled(Person person, long time) {
+    if (disabilityCriteria != null) {
+      return disabilityCriteria.isPersonEligible(person, time);
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Determines earliest disability diagnosis time according to input file
+   * criteria. If the input file is unavailable, the default is Long.MAX_VALUE.
+   * @param person The person.
+   * @return Time of earliest disability diagnosis.
+   */
+  public static long getEarliestDisabilityDiagnosisTime(Person person) {
+    if (disabilityCriteria != null) {
+      return disabilityCriteria.getEarliestDiagnosis(person);
+    } else {
+      return Long.MAX_VALUE;
     }
   }
 

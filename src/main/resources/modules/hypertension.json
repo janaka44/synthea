@@ -43,7 +43,7 @@
         "unit": "years",
         "value": 0
       },
-      "direct_transition": "Set_Yearly_Risk"
+      "direct_transition": "Hypertension_Screening_Reason"
     },
     "Set_Yearly_Risk": {
       "type": "Simple",
@@ -204,8 +204,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 59621000,
-          "display": "Hypertension"
+          "code": "59621000",
+          "display": "Essential hypertension (disorder)"
         }
       ],
       "assign_to_attribute": "hypertension_dx",
@@ -219,8 +219,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 390906007,
-          "display": "Hypertension follow-up encounter"
+          "code": "390906007",
+          "display": "Follow-up encounter (procedure)"
         }
       ],
       "direct_transition": "Record_BP"
@@ -235,7 +235,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Delay 2_Month"
         },
         {
@@ -284,8 +283,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 390906007,
-          "display": "Hypertension follow-up encounter"
+          "code": "390906007",
+          "display": "Follow-up encounter (procedure)"
         }
       ],
       "direct_transition": "Record_BP_2"
@@ -297,8 +296,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 390906007,
-          "display": "Hypertension follow-up encounter"
+          "code": "390906007",
+          "display": "Follow-up encounter (procedure)"
         }
       ],
       "direct_transition": "Record_BP_3",
@@ -314,7 +313,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Delay_2_Month_2"
         },
         {
@@ -324,7 +322,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Delay_2_Month_2"
         },
         {
@@ -346,7 +343,6 @@
           ]
         },
         {
-          "distributions": [],
           "transition": "Delay_2_Month_2"
         }
       ]
@@ -360,30 +356,30 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 443402002,
-          "display": "Lifestyle education regarding hypertension"
+          "code": "443402002",
+          "display": "Lifestyle education regarding hypertension (procedure)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 386463000,
-          "display": "Prescribed activity/exercise education"
+          "code": "386463000",
+          "display": "Prescribed activity/exercise education (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 413473000,
-          "display": "Counseling about alcohol consumption"
+          "code": "413473000",
+          "display": "Counseling about alcohol consumption (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 1151000175103,
-          "display": "Dietary approaches to stop hypertension diet"
+          "code": "1151000175103",
+          "display": "Dietary Approaches to Stop Hypertension diet (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 225323000,
-          "display": "Smoking cessation education"
+          "code": "225323000",
+          "display": "Smoking cessation education (procedure)"
         }
       ],
       "goals": [
@@ -456,8 +452,8 @@
                                     "codes": [
                                       {
                                         "system": "SNOMED-CT",
-                                        "code": 22298006,
-                                        "display": "Myocardial Infarction"
+                                        "code": "22298006",
+                                        "display": "Myocardial infarction (disorder)"
                                       }
                                     ]
                                   },
@@ -466,7 +462,7 @@
                                     "codes": [
                                       {
                                         "system": "SNOMED-CT",
-                                        "code": 399211009,
+                                        "code": "399211009",
                                         "display": "History of myocardial infarction (situation)"
                                       }
                                     ]
@@ -493,7 +489,8 @@
           "transition": "Included"
         }
       ],
-      "wellness": true
+      "wellness": true,
+      "reason": "hypertension_screening_reason"
     },
     "End_Wellness_Encounter": {
       "type": "EncounterEnd",
@@ -550,7 +547,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Hypertension_Followup_Encounter"
         },
         {
@@ -598,7 +594,7 @@
         {
           "system": "LOINC",
           "code": "85354-9",
-          "display": "Blood Pressure"
+          "display": "Blood pressure panel with all children optional"
         }
       ],
       "observations": [
@@ -649,7 +645,7 @@
         {
           "system": "LOINC",
           "code": "85354-9",
-          "display": "Blood Pressure"
+          "display": "Blood pressure panel with all children optional"
         }
       ],
       "observations": [
@@ -700,7 +696,7 @@
         {
           "system": "LOINC",
           "code": "85354-9",
-          "display": "Blood Pressure"
+          "display": "Blood pressure panel with all children optional"
         }
       ],
       "observations": [
@@ -749,8 +745,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 183856001,
-          "display": "Referral to hypertension clinic"
+          "code": "183856001",
+          "display": "Referral to hypertension clinic (procedure)"
         }
       ],
       "direct_transition": "End_Hypertension_Followup_Encounter_3"
@@ -775,7 +771,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Hypertension_Followup_Encounter_2"
         },
         {
@@ -785,7 +780,6 @@
             "operator": "==",
             "value": true
           },
-          "distributions": [],
           "transition": "Hypertension_Followup_Encounter_2"
         },
         {
@@ -890,6 +884,16 @@
     "Drop Outs": {
       "type": "Simple",
       "direct_transition": "Terminal"
+    },
+    "Hypertension_Screening_Reason": {
+      "type": "SetAttribute",
+      "attribute": "hypertension_screening_reason",
+      "direct_transition": "Set_Yearly_Risk",
+      "value_code": {
+        "system": "SNOMED-CT",
+        "code": "171222001",
+        "display": "Hypertension screening (procedure)"
+      }
     }
   },
   "gmf_version": 1

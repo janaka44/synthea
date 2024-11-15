@@ -14,7 +14,20 @@
         "quantity": 3,
         "unit": "days"
       },
-      "direct_transition": "Dialysis_Encounter"
+      "conditional_transition": [
+        {
+          "transition": "CKD guard",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "ckd",
+            "operator": "<",
+            "value": 4
+          }
+        },
+        {
+          "transition": "Dialysis_Encounter"
+        }
+      ]
     },
     "Dialysis_Encounter": {
       "type": "Encounter",
@@ -22,7 +35,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
+          "code": "185347001",
           "display": "Encounter for problem (procedure)"
         }
       ],
@@ -55,7 +68,8 @@
         {
           "transition": "Dialysis weight record"
         }
-      ]
+      ],
+      "reason": "dialysis_reason"
     },
     "end dialysis": {
       "type": "EncounterEnd",
@@ -82,7 +96,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
+          "code": "185347001",
           "display": "Encounter for problem (procedure)"
         }
       ],
@@ -148,7 +162,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736690008,
+          "code": "736690008",
           "display": "Dialysis care plan (record artifact)"
         }
       ],
@@ -156,17 +170,17 @@
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 183063000,
+          "code": "183063000",
           "display": "Low salt diet education (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 229152003,
+          "code": "229152003",
           "display": "Lower limb exercises (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 11816003,
+          "code": "11816003",
           "display": "Diet education (procedure)"
         }
       ]
@@ -188,7 +202,7 @@
             {
               "system": "LOINC",
               "code": "2339-0",
-              "display": "Glucose"
+              "display": "Glucose [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -200,7 +214,7 @@
             {
               "system": "LOINC",
               "code": "6299-2",
-              "display": "Urea Nitrogen"
+              "display": "Urea nitrogen [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -211,7 +225,7 @@
             {
               "system": "LOINC",
               "code": "38483-4",
-              "display": "Creatinine"
+              "display": "Creatinine [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL",
@@ -227,7 +241,7 @@
             {
               "system": "LOINC",
               "code": "49765-1",
-              "display": "Calcium"
+              "display": "Calcium [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -239,7 +253,7 @@
             {
               "system": "LOINC",
               "code": "2947-0",
-              "display": "Sodium"
+              "display": "Sodium [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -251,7 +265,7 @@
             {
               "system": "LOINC",
               "code": "6298-4",
-              "display": "Potassium"
+              "display": "Potassium [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -263,7 +277,7 @@
             {
               "system": "LOINC",
               "code": "2069-3",
-              "display": "Chloride"
+              "display": "Chloride [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -275,7 +289,7 @@
             {
               "system": "LOINC",
               "code": "20565-8",
-              "display": "Carbon Dioxide"
+              "display": "Carbon dioxide, total [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -287,7 +301,7 @@
             {
               "system": "LOINC",
               "code": "33914-3",
-              "display": "Glomerular filtration rate/1.73 sq M.predicted"
+              "display": "Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum or Plasma by Creatinine-based formula (MDRD)"
             }
           ],
           "range": {
@@ -425,7 +439,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 7766007,
+            "code": "7766007",
             "display": "Cloudy urine (finding)"
           }
         },
@@ -434,14 +448,14 @@
           "codes": [
             {
               "system": "LOINC",
-              "code": "5767-9",
+              "code": "34533-0",
               "display": "Odor of Urine"
             }
           ],
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167248002,
+            "code": "167248002",
             "display": "Urine smell ammoniacal (finding)"
           }
         },
@@ -457,7 +471,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 300828005,
+            "code": "300828005",
             "display": "Translucent (qualifier value)"
           }
         },
@@ -473,7 +487,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 371254008,
+            "code": "371254008",
             "display": "Brown color (qualifier value)"
           }
         },
@@ -504,7 +518,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167265006,
+            "code": "167265006",
             "display": "Urine glucose test = ++ (finding)"
           }
         },
@@ -535,7 +549,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 275778006,
+            "code": "275778006",
             "display": "Finding of bilirubin in urine (finding)"
           }
         },
@@ -566,7 +580,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167291007,
+            "code": "167291007",
             "display": "Urine ketone test = +++ (finding)"
           }
         },
@@ -627,7 +641,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167277001,
+            "code": "167277001",
             "display": "Urine protein test = +++ (finding)"
           }
         },
@@ -643,8 +657,8 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 314138001,
-            "display": "Urine nitrite negative (finding)"
+            "code": "314138001",
+            "display": "Nitrite not detected in urine (finding)"
           }
         },
         {
@@ -659,8 +673,8 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167297006,
-            "display": "Urine blood test = negative (finding)"
+            "code": "167297006",
+            "display": "Blood not detected in urine (finding)"
           }
         },
         {
@@ -675,8 +689,8 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 394717006,
-            "display": "Urine leukocyte test negative (finding)"
+            "code": "394717006",
+            "display": "Urine leukocytes not detected (finding)"
           }
         }
       ],
@@ -735,7 +749,8 @@
         "Recommended starting dose for adult patients is 50 to 100 Units/kg 3 times weekly. Reduce or interrupt the dose if hemoglobin level approaches or exceeds 11 g/dl - Ref: Section -For Adult Patients with CKD on Dialysis (https://www.rxlist.com/epogen-drug.htm#description)"
       ],
       "assign_to_attribute": "anemia_medication",
-      "reason": "anemia"
+      "reason": "anemia",
+      "administration": true
     },
     "Epogen_Administered": {
       "type": "MedicationEnd",

@@ -6,6 +6,10 @@ import freemarker.template.TemplateException;
 
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.RandomNumberGenerator;
 
 import org.mitre.synthea.world.agents.Person;
@@ -64,6 +68,15 @@ public class CCDAExporter {
    * @return String of CCDA R2.1 XML.
    */
   public static String export(Person person, long time) {
+    try {
+      person.coverage.getPlanRecordAtTime(time);
+    } catch (RuntimeException e) {
+      // If requesting the current plan at export time
+      // causes an exception, then we fake an insurance
+      // plan for the purposes of creating the super encounter.
+      person.coverage.setPlanToNoInsurance(time);
+      person.coverage.setPlanToNoInsurance(Long.MAX_VALUE);
+    }
     // create a super encounter... this makes it easier to access
     // all the Allergies (for example) in the export templates,
     // instead of having to iterate through all the encounters.
@@ -88,15 +101,31 @@ public class CCDAExporter {
     // of the Person, so we add a few attributes just for the purposes of export.
     person.attributes.put("UUID", new UUIDGenerator(person));
     person.attributes.put("ehr_encounters", person.record.encounters);
-    person.attributes.put("ehr_observations", superEncounter.observations);
-    person.attributes.put("ehr_reports", superEncounter.reports);
     person.attributes.put("ehr_conditions", superEncounter.conditions);
     person.attributes.put("ehr_allergies", superEncounter.allergies);
     person.attributes.put("ehr_procedures", superEncounter.procedures);
     person.attributes.put("ehr_immunizations", superEncounter.immunizations);
     person.attributes.put("ehr_medications", superEncounter.medications);
     person.attributes.put("ehr_careplans", superEncounter.careplans);
-    person.attributes.put("ehr_imaging_studies", superEncounter.imagingStudies);
+
+    List<Observation> vitalSigns = superEncounter.observations
+            .stream()
+            .filter(vs -> vs.category != null && vs.category.equals("vital-signs"))
+            .filter(vs -> vs.value != null)
+            .collect(Collectors.toList());
+
+    person.attributes.put("ehr_vital_signs", vitalSigns);
+
+    List<Observation> surveyResults = superEncounter.observations
+            .stream()
+            .filter(vs -> vs.category != null && vs.category.equals("survey"))
+            .filter(vs -> vs.value != null && vs.value instanceof Double)
+            .collect(Collectors.toList());
+
+    // sadly, the correct plural of status is statuses and not stati
+    person.attributes.put("ehr_functional_statuses", surveyResults);
+
+    person.attributes.put("ehr_results", superEncounter.reports);
 
     Observation smokingHistory = person.record.getLatestObservation("72166-2");
 
@@ -135,6 +164,10 @@ public class CCDAExporter {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    return writer.toString();
+    String ccdaXml = writer.toString();
+    if (!Config.getAsBoolean("exporter.pretty_print", true)) {
+      ccdaXml = ccdaXml.replace("\n", "");
+    }
+    return ccdaXml;
   }
 }

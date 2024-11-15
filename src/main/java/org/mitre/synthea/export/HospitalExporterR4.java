@@ -41,7 +41,7 @@ public abstract class HospitalExporterR4 {
         int totalEncounters = utilization.column(Provider.ENCOUNTERS).values().stream()
             .mapToInt(ai -> ai.get()).sum();
         if (totalEncounters > 0) {
-          BundleEntryComponent entry = FhirR4.provider(rand, bundle, h);
+          BundleEntryComponent entry = FhirR4.provider(bundle, h);
           addHospitalExtensions(h, (Organization) entry.getResource());
         }
       }
@@ -64,7 +64,8 @@ public abstract class HospitalExporterR4 {
           }
         }
       } else {
-        parser = parser.setPrettyPrint(true);
+        Boolean pretty = Config.getAsBoolean("exporter.pretty_print", true);
+        parser = parser.setPrettyPrint(pretty);
         Path outFilePath = outputFolder.toPath().resolve("hospitalInformation" + stop + ".json");
         String bundleJson = parser.encodeResourceToString(bundle);
         Exporter.overwriteFile(outFilePath, bundleJson);

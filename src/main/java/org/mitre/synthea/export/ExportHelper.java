@@ -1,7 +1,6 @@
 package org.mitre.synthea.export;
 
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -11,12 +10,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.UUID;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.hl7.fhir.dstu3.model.Condition;
 import org.mitre.synthea.engine.Components.Attachment;
 import org.mitre.synthea.engine.Components.SampledData;
 import org.mitre.synthea.helpers.TimeSeriesData;
 import org.mitre.synthea.world.agents.Clinician;
+import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.HealthRecord;
 import org.mitre.synthea.world.concepts.HealthRecord.Code;
 import org.mitre.synthea.world.concepts.HealthRecord.Observation;
@@ -148,6 +150,8 @@ public abstract class ExportHelper {
       type = "text";
     } else if (observation.value instanceof Double) {
       type = "numeric";
+    } else if (observation.value instanceof Boolean) {
+      type = "boolean";
     } else if (observation.value != null) {
       type = "text";
     }
@@ -158,20 +162,20 @@ public abstract class ExportHelper {
   /**
    * Year-Month-Day date format.
    */
-  private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+  private static final FastDateFormat DATE_FORMAT = FastDateFormat.getInstance("yyyy-MM-dd");
 
   /**
    * Iso8601 date time format.
    */
-  private static final SimpleDateFormat ISO_DATE_FORMAT = iso();
+  private static final FastDateFormat ISO_DATE_FORMAT = iso();
 
   /**
-   * Create a SimpleDateFormat for iso8601.
+   * Create a FastDateFormat for iso8601.
    * @return Iso8601 date time format.
    */
-  private static final SimpleDateFormat iso() {
-    SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    f.setTimeZone(TimeZone.getTimeZone("UTC"));
+  private static final FastDateFormat iso() {
+    FastDateFormat f = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss'Z'",
+        TimeZone.getTimeZone("UTC"));
     return f;
   }
 
@@ -179,20 +183,14 @@ public abstract class ExportHelper {
    * Get a date string in the format YYYY-MM-DD from the given time stamp.
    */
   public static String dateFromTimestamp(long time) {
-    synchronized (DATE_FORMAT) {
-      // http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6231579
-      return DATE_FORMAT.format(new Date(time));
-    }
+    return DATE_FORMAT.format(new Date(time));
   }
 
   /**
    * Get an iso8601 string for the given time stamp.
    */
   public static String iso8601Timestamp(long time) {
-    synchronized (ISO_DATE_FORMAT) {
-      // http://bugs.java.com/bugdatabase/view_bug.do?bug_id=6231579
-      return ISO_DATE_FORMAT.format(new Date(time));
-    }
+    return ISO_DATE_FORMAT.format(new Date(time));
   }
 
   /**
@@ -215,6 +213,10 @@ public abstract class ExportHelper {
   private static final String RXNORM_URI = "http://www.nlm.nih.gov/research/umls/rxnorm";
   private static final String CVX_URI = "http://hl7.org/fhir/sid/cvx";
   private static final String DICOM_DCM_URI = "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html";
+  private static final String CDT_URI = "http://www.ada.org/cdt";
+  private static final String ICD9_URI = "http://hl7.org/fhir/sid/icd-9-cm";
+  private static final String ICD10_URI = "http://hl7.org/fhir/sid/icd-10";
+  private static final String ICD10_CM_URI = "http://hl7.org/fhir/sid/icd-10-cm";
 
   /**
    * Translate the system name (e.g. SNOMED-CT) into the official
@@ -233,12 +235,20 @@ public abstract class ExportHelper {
       system = CVX_URI;
     } else if (system.equals("DICOM-DCM")) {
       system = DICOM_DCM_URI;
+    } else if (system.equals("CDT")) {
+      system = CDT_URI;
+    } else if (system.equals("ICD9")) {
+      system = ICD9_URI;
+    } else if (system.equals("ICD10")) {
+      system = ICD10_URI;
+    } else if (system.equals("ICD10-CM")) {
+      system = ICD10_CM_URI;
     }
     return system;
   }
 
   /**
-   * Translate the the official FHIR system URI (e.g. http://snomed.info/sct)
+   * Translate the official FHIR system URI (e.g. http://snomed.info/sct)
    * into system name (e.g. SNOMED-CT).
    * @param uri http://snomed.info/sct, http://loinc.org, etc.
    * @return The internal short name used by Synthea, or "Unknown"
@@ -255,6 +265,14 @@ public abstract class ExportHelper {
         return "CVX";
       case DICOM_DCM_URI:
         return "DICOM-DCM";
+      case CDT_URI:
+        return "CDT";
+      case ICD9_URI:
+        return "ICD9";
+      case ICD10_URI:
+        return "ICD10";
+      case ICD10_CM_URI:
+        return "ICD10-CM";
       default:
         return "Unknown";
     }
@@ -284,6 +302,47 @@ public abstract class ExportHelper {
       return String.format("%s?identifier=%s|%s", "Practitioner",
               "http://hl7.org/fhir/sid/us-npi", clinician.npi);
     }
+  }
+
+  /**
+   * Construct a consistent UUID based on the given Person, timestamp, and a key.
+   * This method allows you to get the same UUID for a concept at a given point in time,
+   * when that concept does not map cleanly 1:1 to an object in the Synthea model.
+   * IMPORTANT: this is NOT random but attempts to minimize the likelihood of collisions.
+   */
+  public static final String buildUUID(Person person, long timestamp, String key) {
+    return buildUUID(person.getSeed(), timestamp, key);
+  }
+
+  /**
+   * Construct a consistent UUID based on the given seed, timestamp, and a key.
+   * This method allows you to get the same UUID for a concept at a given point in time,
+   * when that concept does not map cleanly 1:1 to an object in the Synthea model.
+   * IMPORTANT: this is NOT random but attempts to minimize the likelihood of collisions.
+   */
+  public static final String buildUUID(long personSeed, long timestamp, String key) {
+    long mostSigBits = personSeed;
+    long leastSigBits = timestamp;
+
+    // the UUID is just the hex encoding of a 128bit number (represented in java as 2 64bit longs)
+    // so the person seed and timestamp are enough to get us "something", but we can mix it up
+    // to enable variety using the key. to make it numeric just get the hashCode
+    int keyHash = key.hashCode();
+
+    // first add the key to each long
+    mostSigBits = mostSigBits + keyHash;
+    leastSigBits = leastSigBits + keyHash;
+
+    // because the hashCode is an int, it didn't add anything in the upper bits of the long
+    // reverse the hashCode to get the upper bits
+    mostSigBits = mostSigBits + Long.reverse(keyHash);
+    leastSigBits = leastSigBits + Long.reverse(keyHash);
+
+    // finally rotate the bits just to get a little more variance in the characters
+    mostSigBits = Long.rotateLeft(mostSigBits, keyHash);
+    leastSigBits = Long.rotateLeft(leastSigBits, keyHash);
+
+    return new UUID(mostSigBits, leastSigBits).toString();
   }
 
   /**

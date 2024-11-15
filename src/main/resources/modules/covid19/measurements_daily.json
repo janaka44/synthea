@@ -17,7 +17,7 @@
         {
           "system": "LOINC",
           "code": "58410-2",
-          "display": "Complete blood count (hemogram) panel - Blood by Automated count"
+          "display": "CBC panel - Blood by Automated count"
         }
       ],
       "observations": [
@@ -340,7 +340,7 @@
                 "codes": [
                   {
                     "system": "SNOMED-CT",
-                    "code": 40095003,
+                    "code": "40095003",
                     "display": "Injury of kidney (disorder)"
                   }
                 ]
@@ -367,7 +367,7 @@
                 "codes": [
                   {
                     "system": "SNOMED-CT",
-                    "code": 65710008,
+                    "code": "65710008",
                     "display": "Acute respiratory failure (disorder)"
                   }
                 ]
@@ -377,7 +377,7 @@
                 "codes": [
                   {
                     "system": "SNOMED-CT",
-                    "code": 76571007,
+                    "code": "76571007",
                     "display": "Septic shock (disorder)"
                   }
                 ]
@@ -590,7 +590,7 @@
             {
               "system": "LOINC",
               "code": "33914-3",
-              "display": "Glomerular filtration rate/1.73 sq M.predicted"
+              "display": "Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum or Plasma by Creatinine-based formula (MDRD)"
             }
           ],
           "vital_sign": "EGFR"
@@ -804,7 +804,7 @@
             {
               "system": "LOINC",
               "code": "33914-3",
-              "display": "Glomerular filtration rate/1.73 sq M.predicted"
+              "display": "Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum or Plasma by Creatinine-based formula (MDRD)"
             }
           ],
           "range": {
@@ -913,7 +913,7 @@
         {
           "system": "LOINC",
           "code": "19994-3",
-          "display": "Oxygen/Inspired gas setting [Volume Fraction] Ventilator"
+          "display": "Oxygen/Total gas setting [Volume Fraction] Ventilator"
         }
       ],
       "direct_transition": "Terminal",

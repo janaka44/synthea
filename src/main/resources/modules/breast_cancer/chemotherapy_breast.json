@@ -119,7 +119,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 367336001,
+          "code": "367336001",
           "display": "Chemotherapy (procedure)"
         }
       ],
@@ -158,13 +158,13 @@
     },
     "Start New Cycle": {
       "type": "Encounter",
-      "encounter_class": "inpatient",
+      "encounter_class": "ambulatory",
       "reason": "Breast Cancer",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
-          "display": "Encounter for problem"
+          "code": "185347001",
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "direct_transition": "Choose Chemo Drug"
@@ -278,7 +278,7 @@
         {
           "condition": {
             "condition_type": "PriorState",
-            "name": ""
+            "name": "5-fluorouracil"
           },
           "distributions": [
             {

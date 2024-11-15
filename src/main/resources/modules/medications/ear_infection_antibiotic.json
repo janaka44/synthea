@@ -36,8 +36,7 @@
         {
           "transition": "Ear_Infection_Antibiotic_Terminal"
         }
-      ],
-      "name": "Initial"
+      ]
     },
     "Prescribe_Ear_Infection_Antibiotic": {
       "type": "Simple",
@@ -160,8 +159,7 @@
             }
           ]
         }
-      ],
-      "name": "Prescribe_Ear_Infection_Antibiotic"
+      ]
     },
     "Prescribe_Penicillin": {
       "type": "MedicationOrder",
@@ -194,12 +192,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Prescribe_Penicillin"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Prescribe_Ampicillin": {
       "type": "MedicationOrder",
@@ -232,12 +229,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Prescribe_Ampicillin"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Prescribe_Doxycycline": {
       "type": "Simple",
@@ -258,8 +254,7 @@
         {
           "transition": "Adult_Doxycycline"
         }
-      ],
-      "name": "Prescribe_Doxycycline"
+      ]
     },
     "Pediatric_Doxycycline": {
       "type": "MedicationOrder",
@@ -287,17 +282,16 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           },
           {
             "system": "SNOMED-CT",
             "code": "419115000",
-            "display": "Do not take milk, indigestion remedies, or medicines containing iron or zinc at the same time of day as this medicine"
+            "display": "Do not take milk, indigestion remedies, or medicines containing iron or zinc at the same time of day as this medicine (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Pediatric_Doxycycline"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Adult_Doxycycline": {
       "type": "MedicationOrder",
@@ -325,21 +319,19 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           },
           {
             "system": "SNOMED-CT",
             "code": "419115000",
-            "display": "Do not take milk, indigestion remedies, or medicines containing iron or zinc at the same time of day as this medicine"
+            "display": "Do not take milk, indigestion remedies, or medicines containing iron or zinc at the same time of day as this medicine (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Adult_Doxycycline"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Prescribe_Amoxicillin": {
       "type": "Simple",
-      "name": "Prescribe_Amoxicillin",
       "conditional_transition": [
         {
           "transition": "Pediatric_Allergy_Check",
@@ -381,12 +373,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Pediatric_Amoxicillin"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Adult_Amoxicillin": {
       "type": "MedicationOrder",
@@ -414,12 +405,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Adult_Amoxicillin"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Prescribe_Cefaclor": {
       "type": "Simple",
@@ -436,8 +426,7 @@
         {
           "transition": "Adult_Cefaclor"
         }
-      ],
-      "name": "Prescribe_Cefaclor"
+      ]
     },
     "Pediatric_Cefaclor": {
       "type": "MedicationOrder",
@@ -465,12 +454,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Pediatric_Cefaclor"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Adult_Cefaclor": {
       "type": "MedicationOrder",
@@ -498,12 +486,11 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Adult_Cefaclor"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Prescribe_Cefuroxime": {
       "type": "MedicationOrder",
@@ -534,16 +521,14 @@
           {
             "system": "SNOMED-CT",
             "code": "418577003",
-            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed."
+            "display": "Take at regular intervals. Complete the prescribed course unless otherwise directed (qualifier value)"
           }
         ]
       },
-      "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Prescribe_Cefuroxime"
+      "direct_transition": "Ear_Infection_Antibiotic_Terminal"
     },
     "Ear_Infection_Antibiotic_Terminal": {
-      "type": "Terminal",
-      "name": "Ear_Infection_Antibiotic_Terminal"
+      "type": "Terminal"
     },
     "Pediatric_Allergy_Check": {
       "type": "Simple",
@@ -564,12 +549,10 @@
         {
           "transition": "Pediatric_Amoxicillin"
         }
-      ],
-      "name": "Pediatric_Allergy_Check"
+      ]
     },
     "Adult_Allergy_Check": {
       "type": "Simple",
-      "name": "Adult_Allergy_Check",
       "conditional_transition": [
         {
           "transition": "Adult_Azithromycin",
@@ -600,7 +583,6 @@
         }
       ],
       "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Pediatric_Cefdinir",
       "assign_to_attribute": "antibiotic_prescription"
     },
     "Adult_Azithromycin": {
@@ -614,7 +596,6 @@
         }
       ],
       "direct_transition": "Ear_Infection_Antibiotic_Terminal",
-      "name": "Adult_Azithromycin",
       "assign_to_attribute": "antibiotic_prescription"
     }
   },

@@ -1,7 +1,8 @@
 package org.mitre.synthea.modules.covid;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.util.Pair;
@@ -19,7 +20,7 @@ import org.mitre.synthea.world.agents.Person;
  * </p>
  */
 public class C19Vaccine {
-  public static final HashMap<EUASet, C19Vaccine> EUAs = new HashMap();
+  public static final Map<EUASet, C19Vaccine> EUAs = new TreeMap<>();
   private static SyncedEnumeratedDistro<EUASet> shotSelector;
 
   private String display;
@@ -39,22 +40,22 @@ public class C19Vaccine {
    */
   public static void initialize() {
     EUAs.put(EUASet.PFIZER,
-        new C19Vaccine("SARS-COV-2 (COVID-19) vaccine, mRNA, spike protein, LNP, "
-            + "preservative free, 30 mcg/0.3mL dose", "208", true, 0.531,
+        new C19Vaccine("COVID-19, mRNA, LNP-S, PF, 30 mcg/0.3 mL dose",
+            "208", true, 0.531,
             Utilities.convertTime("days", 21)));
     EUAs.put(EUASet.MODERNA,
-        new C19Vaccine("SARS-COV-2 (COVID-19) vaccine, mRNA, spike protein, LNP, "
-            + "preservative free, 100 mcg/0.5mL dose", "207", true, 0.398,
+        new C19Vaccine("COVID-19, mRNA, LNP-S, PF, 100 mcg/0.5mL dose or 50 mcg/0.25mL dose",
+            "207", true, 0.398,
             Utilities.convertTime("days", 28)));
     EUAs.put(EUASet.JANSSEN,
-        new C19Vaccine("SARS-COV-2 (COVID-19) vaccine, vector non-replicating, "
-            + "recombinant spike protein-Ad26, preservative free, 0.5 mL",
+        new C19Vaccine("COVID-19 vaccine, vector-nr, rS-Ad26, PF, 0.5 mL",
             "212", false, 0.071, 0));
 
-    List pmf = EUAs.entrySet().stream()
-        .map(entry -> new Pair(entry.getKey(), entry.getValue().getUsagePercentage()))
+    List<Pair<EUASet, Double>> pmf = EUAs.entrySet().stream()
+        .map(entry -> new Pair<>(entry.getKey(), entry.getValue().getUsagePercentage()))
         .collect(Collectors.toList());
-    shotSelector = new SyncedEnumeratedDistro(pmf);
+
+    shotSelector = new SyncedEnumeratedDistro<EUASet>(pmf);
   }
 
   /**

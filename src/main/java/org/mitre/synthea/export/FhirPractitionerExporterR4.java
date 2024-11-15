@@ -25,6 +25,8 @@ public abstract class FhirPractitionerExporterR4 {
 
   private static final String EXTENSION_URI =
       "http://synthetichealth.github.io/synthea/utilization-encounters-extension";
+  private static final String PROC_EXTENSION_URI =
+      "http://synthetichealth.github.io/synthea/utilization-procedures-extension";
 
   /**
    * Export the practitioner in FHIR R4 format.
@@ -50,11 +52,16 @@ public abstract class FhirPractitionerExporterR4 {
             ArrayList<Clinician> docs = clinicians.get(specialty);
             for (Clinician doc : docs) {
               if (doc.getEncounterCount() > 0) {
-                BundleEntryComponent entry = FhirR4.practitioner(rand, bundle, doc);
+                BundleEntryComponent entry = FhirR4.practitioner(bundle, doc);
                 Practitioner practitioner = (Practitioner) entry.getResource();
                 practitioner.addExtension()
                   .setUrl(EXTENSION_URI)
                   .setValue(new IntegerType(doc.getEncounterCount()));
+                if (doc.getProcedureCount() > 0) {
+                  practitioner.addExtension()
+                    .setUrl(PROC_EXTENSION_URI)
+                    .setValue(new IntegerType(doc.getProcedureCount()));
+                }
               }
             }
           }
@@ -77,7 +84,8 @@ public abstract class FhirPractitionerExporterR4 {
           }
         }
       } else {
-        parser = parser.setPrettyPrint(true);
+        Boolean pretty = Config.getAsBoolean("exporter.pretty_print", true);
+        parser = parser.setPrettyPrint(pretty);
         Path outFilePath =
             outputFolder.toPath().resolve("practitionerInformation" + stop + ".json");
         String bundleJson = parser.encodeResourceToString(bundle);

@@ -75,10 +75,11 @@
         {
           "system": "SNOMED-CT",
           "code": "698314001",
-          "display": "Consultation for treatment"
+          "display": "Consultation for treatment (procedure)"
         }
       ],
-      "direct_transition": "Combination_Or_Minipill"
+      "direct_transition": "Combination_Or_Minipill",
+      "reason": "contraception_care_reason"
     },
     "Combination_Or_Minipill": {
       "type": "Simple",
@@ -394,7 +395,7 @@
         {
           "system": "RxNorm",
           "code": "235389",
-          "display": "Mestranol / Norethynodrel [Enovid]"
+          "display": "Mestranol / Norethynodrel"
         }
       ],
       "direct_transition": "End_Encounter"

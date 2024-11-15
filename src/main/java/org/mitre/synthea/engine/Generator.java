@@ -32,7 +32,6 @@ import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.DefaultRandomNumberGenerator;
 import org.mitre.synthea.helpers.RandomNumberGenerator;
-import org.mitre.synthea.helpers.TransitionMetrics;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.identity.Entity;
 import org.mitre.synthea.identity.EntityManager;
@@ -45,6 +44,8 @@ import org.mitre.synthea.world.agents.PayerManager;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.agents.Provider;
 import org.mitre.synthea.world.concepts.Costs;
+import org.mitre.synthea.world.concepts.HealthRecord.Encounter;
+import org.mitre.synthea.world.concepts.HealthRecord.EncounterType;
 import org.mitre.synthea.world.concepts.VitalSign;
 import org.mitre.synthea.world.geography.Demographics;
 import org.mitre.synthea.world.geography.Location;
@@ -75,7 +76,6 @@ public class Generator {
   private boolean onlyVeterans;
   private Module keepPatientsModule;
   private Long maxAttemptsToKeepPatient;
-  public TransitionMetrics metrics;
   public static String DEFAULT_STATE = "Massachusetts";
   private Exporter.ExporterRuntimeOptions exporterRuntimeOptions;
   public static EntityManager entityManager;
@@ -112,6 +112,7 @@ public class Generator {
     /** By default use the current time as random seed. */
     public long seed = referenceTime;
     public long clinicianSeed = referenceTime;
+    public Long singlePersonSeed;
     /** Population as exclusively live persons or including deceased.
      * True for live, false includes deceased */
     public boolean overflow = true;
@@ -138,7 +139,7 @@ public class Generator {
      *  value of -1 will evolve the population to the current system time. */
     public int daysToTravelForward = -1;
     /** Path to a module defining which patients should be kept and exported. */
-    public File keepPatientsModulePath;
+    public Path keepPatientsModulePath;
   }
 
   /**
@@ -216,6 +217,8 @@ public class Generator {
     if (Config.getAsBoolean("exporter.cdw.export")) {
       CDWExporter.getInstance().setKeyStart((stateIndex * 1_000_000) + 1);
     }
+    Exporter.loadCustomExporters();
+    Exporter.loadCodeMappers();
 
     this.populationRandom = new DefaultRandomNumberGenerator(options.seed);
     this.clinicianRandom = new DefaultRandomNumberGenerator(options.clinicianSeed);
@@ -257,10 +260,6 @@ public class Generator {
     stats.put("alive", new AtomicInteger(0));
     stats.put("dead", new AtomicInteger(0));
 
-    if (Config.getAsBoolean("generate.track_detailed_transition_metrics", false)) {
-      this.metrics = new TransitionMetrics();
-    }
-
     // initialize hospitals
     Provider.loadProviders(location, this.clinicianRandom);
     // Initialize Payers
@@ -274,8 +273,8 @@ public class Generator {
 
     if (options.keepPatientsModulePath != null) {
       try {
-        Path path = options.keepPatientsModulePath.toPath().toAbsolutePath();
-        this.keepPatientsModule = Module.loadFile(path, false, null, true);
+        this.keepPatientsModule =
+            Module.loadFile(options.keepPatientsModulePath, false, null, true);
       } catch (Exception e) {
         throw new ExceptionInInitializerError(e);
       }
@@ -371,13 +370,16 @@ public class Generator {
           threadPool.submit(() -> updateRecordExportPerson(p, index));
         }
       }
-    } else {
+    } else if (this.options.singlePersonSeed == null) {
       // Generate patients up to the specified population size.
       for (int i = 0; i < this.options.population; i++) {
         final int index = i;
         final long seed = this.populationRandom.randLong();
         threadPool.submit(() -> generatePerson(index, seed));
       }
+    } else {
+      // we have a single fixed seed to generate, don't bother with threadpool
+      generatePerson(0, this.options.singlePersonSeed);
     }
 
     try {
@@ -409,10 +411,6 @@ public class Generator {
             stats.get("alive").get(), stats.get("dead").get());
     System.out.printf("RNG=%d\n", this.populationRandom.getCount());
     System.out.printf("Clinician RNG=%d\n", this.clinicianRandom.getCount());
-
-    if (this.metrics != null) {
-      metrics.printStats(totalGeneratedPopulation.get(), Module.getModules(getModulePredicate()));
-    }
   }
 
   /**
@@ -448,6 +446,7 @@ public class Generator {
   public Person generatePerson(int index, long personSeed) {
 
     Person person = new Person(personSeed);
+    boolean wasExported = true;
 
     try {
       int tryNumber = 0; // Number of tries to create these demographics
@@ -530,9 +529,13 @@ public class Generator {
 
         // TODO - export is DESTRUCTIVE when it filters out data
         // this means export must be the LAST THING done with the person
-        Exporter.export(person, finishTime, exporterRuntimeOptions);
+        wasExported = Exporter.export(person, finishTime, exporterRuntimeOptions);
+        if (!wasExported) {
+          personSeed = person.randLong();
+          demoAttributes = randomDemographics(person);
+        }
 
-      } while (!patientMeetsCriteria);
+      } while (!patientMeetsCriteria || !wasExported);
       //repeat while patient doesn't meet criteria
       // if the patient is alive and we want only dead ones => loop & try again
       //  (and dont even export, see above)
@@ -707,6 +710,40 @@ public class Generator {
       time += timestep;
     }
 
+    // If the person has an open encounter, we need to override the default
+    // encounter times and charges, with the current length of stay and activities.
+    // This also ensures that long encounters like hospice and SNF have proper
+    // lengths of stay, and if the patient died before discharge, that the encounter
+    // ended upon their death.
+    if (person.hasCurrentEncounter()) {
+      // For most encounters, use `person.lastUpdated`, because
+      // the call to `person.record.encounterEnd(...)` will calculate the
+      // length of the encounter from the procedures inside it, and then
+      // choose between that time and the `lastUpdated` time
+      // (picking whichever accounts for all the procedures).
+      long endTime = person.lastUpdated;
+      Encounter previous = person.record.currentEncounter(stop);
+      EncounterType previousType = EncounterType.fromString(previous.type);
+      if (previousType.equals(EncounterType.INPATIENT)
+          || previousType.equals(EncounterType.HOSPICE)
+          || previousType.equals(EncounterType.SNF)) {
+        // But for long-running encounters, we use `stop`, because if
+        // the module didn't manually end the encounter, we want them to run
+        // right up to the present day.
+        endTime = stop;
+      }
+      if (person.attributes.containsKey(Person.DEATHDATE)) {
+        long deathTime = (Long) person.attributes.get(Person.DEATHDATE);
+        if (deathTime < endTime) {
+          // However, if the patient is dead, do not continue the encounter
+          // after their death.
+          endTime = deathTime;
+        }
+      }
+      person.record.encounterEnd(endTime, previousType);
+    }
+
+    // If the person is dead, we need a death certificate.
     DeathModule.process(person, time);
   }
 
@@ -767,7 +804,7 @@ public class Generator {
     // Pull the person's location data.
     demographicsOutput.put(Person.CITY, city.city);
     demographicsOutput.put(Person.STATE, city.state);
-    demographicsOutput.put("county", city.county);
+    demographicsOutput.put(Person.COUNTY, city.county);
 
     // Generate the person's race data based on their location.
     String race = city.pickRace(random);
@@ -885,10 +922,6 @@ public class Generator {
 
     if (internalStore != null) {
       internalStore.add(person);
-    }
-
-    if (this.metrics != null) {
-      metrics.recordStats(person, finishTime, Module.getModules(modulePredicate));
     }
 
     if (!this.logLevel.equals("none")) {

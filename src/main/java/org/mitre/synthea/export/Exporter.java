@@ -1,6 +1,7 @@
 package org.mitre.synthea.export;
 
 import ca.uhn.fhir.parser.IParser;
+import com.google.common.base.Strings;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,18 +14,32 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import org.hl7.fhir.r4.model.Parameters;
+import org.hl7.fhir.r4.model.StringType;
 import org.mitre.synthea.engine.Generator;
+import org.mitre.synthea.export.flexporter.Actions;
+import org.mitre.synthea.export.flexporter.FhirPathUtils;
+import org.mitre.synthea.export.flexporter.FlexporterJavascriptContext;
+import org.mitre.synthea.export.flexporter.Mapping;
+import org.mitre.synthea.export.rif.BB2RIFExporter;
+import org.mitre.synthea.export.rif.CodeMapper;
 import org.mitre.synthea.helpers.Config;
+import org.mitre.synthea.helpers.TransitionMetrics;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.identity.Entity;
 import org.mitre.synthea.identity.Seed;
@@ -56,6 +71,74 @@ public abstract class Exporter {
 
   private static final int FILE_BUFFER_SIZE = 4 * 1024 * 1024;
 
+  private static List<PatientExporter> patientExporters;
+  private static List<PostCompletionExporter> postCompletionExporters;
+  private static Map<String, CodeMapper> codeMappers;
+
+  /**
+   * If the config setting "exporter.enable_custom_exporters" is enabled,
+   * load classes implementing the {@link PatientExporter} or {@link PostCompletionExporter}
+   * interfaces from the classpath, via the ServiceLoader.
+   */
+  public static void loadCustomExporters() {
+    if (Config.getAsBoolean("exporter.enable_custom_exporters", false)) {
+      patientExporters = new ArrayList<>();
+      postCompletionExporters = new ArrayList<>();
+
+      ServiceLoader<PatientExporter> loader = ServiceLoader.load(PatientExporter.class);
+      for (PatientExporter instance : loader) {
+        System.out.println(instance.getClass().getCanonicalName());
+        patientExporters.add(instance);
+      }
+
+      ServiceLoader<PostCompletionExporter> loader2 =
+          ServiceLoader.load(PostCompletionExporter.class);
+      for (PostCompletionExporter instance : loader2) {
+        System.out.println(instance.getClass().getCanonicalName());
+        postCompletionExporters.add(instance);
+      }
+    }
+  }
+
+  /**
+   * Load any configured code mappers. Code mappers are configured via the
+   * synthea.properties file and a sample configuration is shown below:
+   * <pre>
+   * exporter.code_map.icd_10=export/anti_amyloid_code_map.json
+   * exporter.code_map.cpt=export/phlebotomy_code_map.json,export/neurology_code_map.json
+   * </pre>
+   * The above define a single code map for ICD-10 codes and two code maps for CPT codes.
+   */
+  public static void loadCodeMappers() {
+    codeMappers = new HashMap<String, CodeMapper>();
+    List<String> codeSystemProperties = Config.allPropertyNames()
+            .stream()
+            .filter((key) -> key.startsWith("exporter.code_map"))
+            .collect(Collectors.toList());
+    codeSystemProperties.forEach(codeSystemProperty -> {
+      String codeSystem = codeSystemProperty.strip().replace(
+              "exporter.code_map.", "").toUpperCase();
+      String[] resources = Config.get(codeSystemProperty).split(",");
+      for (String resource: resources) {
+        CodeMapper mapper = new CodeMapper(resource);
+        if (codeMappers.containsKey(codeSystem)) {
+          codeMappers.get(codeSystem).merge(mapper);
+        } else {
+          codeMappers.put(codeSystem, mapper);
+        }
+      }
+    });
+  }
+
+  /**
+   * Get the code mapper for the supplied code system.
+   * @param codeSystem the code system
+   * @return the corresponding code mapper or null if none configured
+   */
+  public static CodeMapper getCodeMapper(String codeSystem) {
+    return codeMappers.get(codeSystem);
+  }
+
   /**
    * Runtime configuration of the record exporter.
    */
@@ -67,9 +150,10 @@ public abstract class Exporter {
         !Config.get("generate.terminology_service_url", "").isEmpty();
     private BlockingQueue<String> recordQueue;
     private SupportedFhirVersion fhirVersion;
+    private List<Mapping> flexporterMappings;
 
     public ExporterRuntimeOptions() {
-      yearsOfHistory = Integer.parseInt(Config.get("exporter.years_of_history"));
+      yearsOfHistory = Config.getAsInteger("exporter.years_of_history", 10);
     }
 
     /**
@@ -81,6 +165,7 @@ public abstract class Exporter {
       terminologyService = init.terminologyService;
       recordQueue = init.recordQueue;
       fhirVersion = init.fhirVersion;
+      flexporterMappings = init.flexporterMappings;
     }
 
     /**
@@ -118,6 +203,19 @@ public abstract class Exporter {
     public boolean isRecordQueueEmpty() {
       return recordQueue == null || recordQueue.size() == 0;
     }
+
+    /**
+     * Register a new Flexporter mapping to be applied to Bundles from the FHIR exporter.
+     * Multiple mappings may be added and will be processed in order.
+     * @param mapping Flexporter mapping to add to list
+     */
+    public void addFlexporterMapping(Mapping mapping) {
+      if (this.flexporterMappings == null) {
+        this.flexporterMappings = new ArrayList<>();
+      }
+
+      this.flexporterMappings.add(mapping);
+    }
   }
 
   /**
@@ -128,8 +226,10 @@ public abstract class Exporter {
    * @param stopTime Time at which the simulation stopped
    * @param options Runtime exporter options
    */
-  public static void export(Person person, long stopTime, ExporterRuntimeOptions options) {
+  public static boolean export(Person person, long stopTime, ExporterRuntimeOptions options) {
+    boolean wasExported = false;
     if (options.deferExports) {
+      wasExported = true;
       deferredExports.add(new ImmutablePair<Person, Long>(person, stopTime));
     } else {
       if (options.yearsOfHistory > 0) {
@@ -148,13 +248,15 @@ public abstract class Exporter {
             Variant variant = seed.selectVariant(person);
             person.attributes.putAll(variant.demographicAttributesForPerson());
           }
-          exportRecord(person, Integer.toString(i), stopTime, options);
+          boolean exported = exportRecord(person, Integer.toString(i), stopTime, options);
+          wasExported = wasExported || exported;
           i++;
         }
       } else {
-        exportRecord(person, "", stopTime, options);
+        wasExported = exportRecord(person, "", stopTime, options);
       }
     }
+    return wasExported;
   }
 
   /**
@@ -177,8 +279,9 @@ public abstract class Exporter {
    * @param stopTime Time at which the simulation stopped
    * @param options Generator's record queue (may be null)
    */
-  private static void exportRecord(Person person, String fileTag, long stopTime,
+  private static boolean exportRecord(Person person, String fileTag, long stopTime,
           ExporterRuntimeOptions options) {
+    boolean wasExported = true;
     if (options.terminologyService) {
       // Resolve any coded values within the record that are specified using a ValueSet URI.
       ValueSetCodeResolver valueSetCodeResolver = new ValueSetCodeResolver(person);
@@ -221,9 +324,26 @@ public abstract class Exporter {
     }
     if (Config.getAsBoolean("exporter.fhir.export")) {
       File outDirectory = getOutputFolder("fhir", person);
+      org.hl7.fhir.r4.model.Bundle bundle = FhirR4.convertToFHIR(person, stopTime);
+
+      if (options.flexporterMappings != null) {
+        FlexporterJavascriptContext fjContext = null;
+
+        for (Mapping mapping : options.flexporterMappings) {
+          if (FhirPathUtils.appliesToBundle(bundle, mapping.applicability, mapping.variables)) {
+            if (fjContext == null) {
+              // only set this the first time it is actually used
+              // TODO: figure out how to silence the truffle warnings
+              fjContext = new FlexporterJavascriptContext();
+            }
+            bundle = Actions.applyMapping(bundle, mapping, person, fjContext);
+          }
+        }
+      }
+
+      IParser parser = FhirR4.getContext().newJsonParser();
       if (Config.getAsBoolean("exporter.fhir.bulk_data")) {
-        org.hl7.fhir.r4.model.Bundle bundle = FhirR4.convertToFHIR(person, stopTime);
-        IParser parser = FhirR4.getContext().newJsonParser().setPrettyPrint(false);
+        parser.setPrettyPrint(false);
         for (org.hl7.fhir.r4.model.Bundle.BundleEntryComponent entry : bundle.getEntry()) {
           String filename = entry.getResource().getResourceType().toString() + ".ndjson";
           Path outFilePath = outDirectory.toPath().resolve(filename);
@@ -231,7 +351,8 @@ public abstract class Exporter {
           appendToFile(outFilePath, entryJson);
         }
       } else {
-        String bundleJson = FhirR4.convertToFHIRJson(person, stopTime);
+        parser.setPrettyPrint(true);
+        String bundleJson = parser.encodeResourceToString(bundle);
         Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "json"));
         writeNewFile(outFilePath, bundleJson);
       }
@@ -259,7 +380,7 @@ public abstract class Exporter {
     if (Config.getAsBoolean("exporter.bfd.export")) {
       try {
         BB2RIFExporter exporter = BB2RIFExporter.getInstance();
-        exporter.export(person, stopTime, options.yearsOfHistory);
+        wasExported = exporter.export(person, stopTime, options.yearsOfHistory);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -312,6 +433,14 @@ public abstract class Exporter {
       String consolidatedNotes = ClinicalNoteExporter.export(person);
       writeNewFile(outFilePath, consolidatedNotes);
     }
+
+    if (Config.getAsBoolean("exporter.custom.export", true)
+            && patientExporters != null && !patientExporters.isEmpty()) {
+      for (PatientExporter patientExporter : patientExporters) {
+        patientExporter.export(person, stopTime, options);
+      }
+    }
+
     if (options.isQueueEnabled()) {
       try {
         switch (options.queuedFhirVersion()) {
@@ -331,6 +460,7 @@ public abstract class Exporter {
         e.printStackTrace();
       }
     }
+    return wasExported;
   }
 
   /**
@@ -351,7 +481,7 @@ public abstract class Exporter {
    * @param file Path to the new file.
    * @param contents The contents of the file.
    */
-  static void overwriteFile(Path file, String contents) {
+  public static void overwriteFile(Path file, String contents) {
     try {
       Files.write(file, Collections.singleton(contents), StandardOpenOption.CREATE,
               StandardOpenOption.TRUNCATE_EXISTING);
@@ -365,7 +495,7 @@ public abstract class Exporter {
    * @param file Path to the new file.
    * @param contents The contents of the file.
    */
-  static void appendToFile(Path file, String contents) {
+  public static void appendToFile(Path file, String contents) {
     PrintWriter writer = fileWriters.get(file);
 
     if (writer == null) {
@@ -475,6 +605,7 @@ public abstract class Exporter {
         exporter.exportNPIs();
         exporter.exportManifest();
         exporter.exportEndState();
+        exporter.exportMissingCodes();
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -498,6 +629,44 @@ public abstract class Exporter {
         MetadataExporter.exportMetadata(generator);
       } catch (IOException e) {
         e.printStackTrace();
+      }
+    }
+
+    if (Config.getAsBoolean("generate.track_detailed_transition_metrics", false)) {
+      TransitionMetrics.exportMetrics();
+    }
+
+    if (Config.getAsBoolean("exporter.fhir.bulk_data")) {
+      IParser parser = FhirR4.getContext().newJsonParser();
+      parser.setPrettyPrint(false);
+      Parameters parameters = new Parameters()
+              .addParameter("inputFormat","application/fhir+ndjson");
+      File outDirectory = getOutputFolder("fhir", null);
+
+      File[] files = outDirectory.listFiles(pathname -> pathname.getName().endsWith("ndjson"));
+
+      String configHostname = Config.get("exporter.fhir.bulk_data.parameter_hostname");
+      String hostname = Strings.isNullOrEmpty(configHostname)
+              ? "http://localhost:8000/" : configHostname;
+
+      for (File file : files) {
+        parameters.addParameter(
+                new Parameters.ParametersParameterComponent().setName("input")
+                        .addPart(new Parameters.ParametersParameterComponent()
+                                .setName("type")
+                                .setValue(new StringType(file.getName().split("\\.")[0])))
+                        .addPart(new Parameters.ParametersParameterComponent()
+                                .setName("url")
+                                .setValue(new StringType(hostname + file.getName()))));
+      }
+      overwriteFile(outDirectory.toPath().resolve("parameters.json"),
+              parser.encodeResourceToString(parameters));
+    }
+
+    if (Config.getAsBoolean("exporter.custom.export", true)
+            && postCompletionExporters != null && !postCompletionExporters.isEmpty()) {
+      for (PostCompletionExporter postCompletionExporter : postCompletionExporters) {
+        postCompletionExporter.export(generator, options);
       }
     }
 
@@ -548,25 +717,15 @@ public abstract class Exporter {
 
     long cutoffDate = endTime - Utilities.convertTime("years", yearsToKeep);
     Predicate<HealthRecord.Entry> notFutureDated = e -> e.start <= endTime;
+    Predicate<HealthRecord.Entry> entryIsActive = e -> e.stop == 0L || e.stop > cutoffDate;
 
     for (Encounter encounter : record.encounters) {
       List<Claim.ClaimEntry> claimItems = encounter.claim.items;
-      // keep conditions if still active, regardless of start date
-      Predicate<HealthRecord.Entry> conditionActive = c -> record.conditionActive(c.type);
-      // or if the condition was active at any point since the cutoff date
-      Predicate<HealthRecord.Entry> activeWithinCutoff = c -> c.stop != 0L && c.stop > cutoffDate;
-      Predicate<HealthRecord.Entry> keepCondition = conditionActive.or(activeWithinCutoff);
-      filterEntries(encounter.conditions, claimItems, cutoffDate, endTime, keepCondition);
+      // keep a condition if it was active at any point since the cutoff date
+      filterEntries(encounter.conditions, claimItems, cutoffDate, endTime, entryIsActive);
 
       // allergies are essentially the same as conditions
-      // But we need to redefine all of the predicates, because we are talking about Allergies as
-      // opposed to Entries... You would think that it would work... but generics are hard
-      Predicate<HealthRecord.Allergy> allergyActive = c -> record.allergyActive(c.type);
-      // or if the condition was active at any point since the cutoff date
-      Predicate<HealthRecord.Allergy> allergyActiveWithinCutoff =
-          c -> c.stop != 0L && c.stop > cutoffDate;
-      Predicate<HealthRecord.Allergy> keepAllergy = allergyActive.or(allergyActiveWithinCutoff);
-      filterEntries(encounter.allergies, claimItems, cutoffDate, endTime, keepAllergy);
+      filterEntries(encounter.allergies, claimItems, cutoffDate, endTime, entryIsActive);
 
       // some of the "future death" logic could potentially add a future-dated death certificate
       Predicate<Observation> isCauseOfDeath =
@@ -583,14 +742,12 @@ public abstract class Exporter {
       filterEntries(encounter.procedures, claimItems, cutoffDate, endTime, null);
 
       // keep medications if still active, regardless of start date
-      filterEntries(encounter.medications, claimItems, cutoffDate, endTime,
-          med -> record.medicationActive(med.type));
+      filterEntries(encounter.medications, claimItems, cutoffDate, endTime, entryIsActive);
 
       filterEntries(encounter.immunizations, claimItems, cutoffDate, endTime, null);
 
       // keep careplans if they are still active, regardless of start date
-      filterEntries(encounter.careplans, claimItems, cutoffDate, endTime,
-          cp -> record.careplanActive(cp.type));
+      filterEntries(encounter.careplans, claimItems, cutoffDate, endTime, entryIsActive);
     }
 
     // if ANY of these are not empty, the encounter is not empty
@@ -625,7 +782,7 @@ public abstract class Exporter {
    */
   private static <E extends HealthRecord.Entry> void filterEntries(List<E> entries,
       List<Claim.ClaimEntry> claimItems, long cutoffDate,
-      long endTime, Predicate<E> keepFunction) {
+      long endTime, Predicate<? super E> keepFunction) {
 
     Iterator<E> iterator = entries.iterator();
     // iterator allows us to use the remove() method

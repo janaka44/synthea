@@ -7,16 +7,23 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.spi.FileSystemProvider;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -124,8 +131,36 @@ public class Utilities {
     return calendar.get(Calendar.MONTH) + 1;
   }
 
+  /**
+   * Convert the given LocalDate into a Unix timestamp.
+   * The LocalDate is assumed to be interpreted in the UTC time zone,
+   * and a timestamp is created of the start of the day (00:00:00, or 12:00 midnight).
+   * @param date the local date
+   * @return the timestamp
+   */
   public static long localDateToTimestamp(LocalDate date) {
-    return date.atStartOfDay().toInstant(OffsetDateTime.now().getOffset()).toEpochMilli();
+    return date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+  }
+
+  /**
+   * Convert the given Unix timestamp into a LocalDate.
+   * The timestamp is assumed to be interpreted in the UTC time zone.
+   */
+  public static LocalDate timestampToLocalDate(long timestamp) {
+    return Instant.ofEpochMilli(timestamp).atOffset(ZoneOffset.UTC).toLocalDate();
+  }
+
+  /**
+   * Get the timestamp of the nth anniversary of the supplied timestamp.
+   * @param date the timestamp
+   * @param anniversary the number of years after
+   * @return the anniversary timestamp
+   */
+  public static long getAnniversary(long date, int anniversary) {
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    calendar.setTimeInMillis(date);
+    calendar.set(Calendar.YEAR, calendar.get(Calendar.YEAR) + anniversary);
+    return calendar.getTimeInMillis();
   }
 
   /**
@@ -411,8 +446,55 @@ public class Utilities {
    * @throws IOException if any error occurs reading the file
    */
   public static final String readResource(String filename) throws IOException {
-    URL url = Resources.getResource(filename);
-    return Resources.toString(url, Charsets.UTF_8);
+    return readResource(filename, false, false);
+  }
+
+  /**
+   * Read the entire contents of a file into a String.
+   * @param filename Path to the file.
+   * @param stripBOM Whether or not to check for and strip a BOM
+   *     -- see {@link #readResourceAndStripBOM(String)} for more info
+   * @param allowFreePath If false, the file must be within src/main/resources.
+   *     If true, the file may be anywhere on the filesystem.
+   * @return The entire text contents of the file.
+   * @throws IOException if any error occurs reading the file
+   */
+  public static final String readResource(String filename, boolean stripBOM, boolean allowFreePath)
+      throws IOException {
+    String contents;
+
+    try {
+      URL url = Resources.getResource(filename);
+      contents = Resources.toString(url, Charsets.UTF_8);
+    } catch (IllegalArgumentException e) {
+      // Resources throws an IllegalArgumentException instead of FileNotFoundException
+      // when the resource is not found - this may be a full path
+      if (!allowFreePath) {
+        throw e;
+      }
+      try {
+        Path path = new File(filename).toPath();
+        contents = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+      } catch (FileNotFoundException fnfe) {
+        throw new IllegalArgumentException("Unable to locate or read " + filename);
+      }
+    }
+
+    if (stripBOM && contents.startsWith("\uFEFF")) {
+      contents = contents.substring(1); // Removes BOM.
+    }
+    return contents;
+  }
+
+  /**
+   * Read the entire contents of a file into a String.
+   * The file may be relative to src/main/resources or anywhere on the filesystem.
+   * @param filename Path to the files.
+   * @return The entire text contents of the file.
+   * @throws IOException if any error occurs reading the file
+   */
+  public static final String readResourceOrPath(String filename) throws IOException {
+    return readResource(filename, false, true);
   }
 
   /**
@@ -425,11 +507,7 @@ public class Utilities {
    * @throws IOException if any error occurs reading the file
    */
   public static final String readResourceAndStripBOM(String filename) throws IOException {
-    String contents = readResource(filename);
-    if (contents.startsWith("\uFEFF")) {
-      contents = contents.substring(1); // Removes BOM.
-    }
-    return contents;
+    return readResource(filename, true, false);
   }
 
   /**
@@ -525,9 +603,11 @@ public class Utilities {
    *        (topLevelModulesFolderPath, currentModulePath) -&gt; {...}
    */
   public static void walkAllModules(BiConsumer<Path, Path> action) throws Exception {
-    Path modulesPath = Module.getModulesPath();
+    List<Path> modulePaths = Module.getModulePaths();
 
-    walkAllModules(modulesPath, p -> action.accept(modulesPath, p));
+    for (Path path : modulePaths) {
+      walkAllModules(path, p -> action.accept(path, p));
+    }
   }
 
   /**
@@ -563,5 +643,30 @@ public class Utilities {
       input.remove(key);
     });
     return input;
+  }
+
+  /**
+   * Enable reading the given URI from within a JAR file.
+   * For example, for command-line args which may refer to internal or external paths.
+   * Note that it's not always possible to know when a user-provided path
+   * is within a JAR file, so this method should be called if it is possible the
+   * path refers to an internal location.
+   * @param uri URI to be accessed
+   */
+  public static void enableReadingURIFromJar(URI uri) throws IOException {
+    // this function is a hack to enable reading modules from within a JAR file
+    // see https://stackoverflow.com/a/48298758
+    if ("jar".equals(uri.getScheme())) {
+      for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
+        if (provider.getScheme().equalsIgnoreCase("jar")) {
+          try {
+            provider.getFileSystem(uri);
+          } catch (FileSystemNotFoundException e) {
+            // in this case we need to initialize it first:
+            provider.newFileSystem(uri, Collections.emptyMap());
+          }
+        }
+      }
+    }
   }
 }

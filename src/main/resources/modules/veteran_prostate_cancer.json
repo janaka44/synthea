@@ -43,13 +43,14 @@
     "annual_wellness_visit": {
       "type": "Encounter",
       "direct_transition": "wellness_procedure",
-      "wellness": true
+      "wellness": true,
+      "reason": "wellness_encounter_reason"
     },
     "male_guard": {
       "type": "Simple",
       "conditional_transition": [
         {
-          "transition": "annual_wellness_visit",
+          "transition": "Wellness_Encounter_Reason",
           "condition": {
             "condition_type": "Gender",
             "gender": "M"
@@ -69,8 +70,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 410006001,
-          "display": "Digital examination of rectum"
+          "code": "410006001",
+          "display": "Digital examination of rectum (procedure)"
         }
       ],
       "duration": {
@@ -191,8 +192,8 @@
       ],
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 275302008,
-        "display": "Prostate enlarged on PR"
+        "code": "275302008",
+        "display": "Prostate enlarged on PR (finding)"
       }
     },
     "normal_DRE": {
@@ -209,8 +210,8 @@
       "direct_transition": "detect_normal results",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 300531004,
-        "display": "Normal size prostate"
+        "code": "300531004",
+        "display": "Normal sized prostate (finding)"
       }
     },
     "wellness_visit_time_delay": {
@@ -227,19 +228,20 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185345009,
-          "display": "Encounter for symptom"
+          "code": "185345009",
+          "display": "Encounter for symptom (procedure)"
         }
       ],
-      "direct_transition": "biopsy procedure"
+      "direct_transition": "biopsy procedure",
+      "reason": "Suspected_Prostate_Cancer"
     },
     "biopsy procedure": {
       "type": "Procedure",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 65575008,
-          "display": "Biopsy of prostate"
+          "code": "65575008",
+          "display": "Biopsy of prostate (procedure)"
         }
       ],
       "duration": {
@@ -272,8 +274,8 @@
       "direct_transition": "Prostate_Cancer",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 165132006,
-        "display": "Surgical biopsy result abnormal"
+        "code": "165132006",
+        "display": "Surgical biopsy result abnormal (finding)"
       }
     },
     "biopsy_results_normal": {
@@ -287,11 +289,11 @@
           "display": "US Guidance for biopsy of Prostate"
         }
       ],
-      "direct_transition": "biopsy_visit_end",
+      "direct_transition": "End_Suspected_Prostate_Cancer",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 165131004,
-        "display": "Surgical biopsy result normal"
+        "code": "165131004",
+        "display": "Surgical biopsy result normal (finding)"
       }
     },
     "biopsy_visit_end": {
@@ -322,32 +324,32 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 126906006,
-          "display": "Neoplasm of prostate"
+          "code": "126906006",
+          "display": "Neoplasm of prostate (disorder)"
         }
       ],
-      "direct_transition": "biopsy_visit_end"
+      "direct_transition": "End_Suspected_Prostate_Cancer"
     },
     "Aggressive_Therapy_Careplan": {
       "type": "CarePlanStart",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736252007,
-          "display": "Cancer care plan"
+          "code": "736252007",
+          "display": "Cancer care plan (record artifact)"
         }
       ],
       "direct_transition": "In Situ Prostate Cancer",
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 408580007,
-          "display": "Physical activity target light exercise"
+          "code": "408580007",
+          "display": "Physical activity target light exercise (finding)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 229578001,
-          "display": "Ice bath treatment"
+          "code": "229578001",
+          "display": "Ice bath treatment (regime/therapy)"
         }
       ],
       "reason": "prostate_cancer"
@@ -357,8 +359,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736252007,
-          "display": "Cancer care plan"
+          "code": "736252007",
+          "display": "Cancer care plan (record artifact)"
         }
       ],
       "direct_transition": "Stage 4 Prostate Cancer",
@@ -383,8 +385,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 90470006,
-          "display": "Prostatectomy"
+          "code": "90470006",
+          "display": "Prostatectomy (procedure)"
         }
       ],
       "duration": {
@@ -470,7 +472,7 @@
       "exact": {
         "quantity": 1
       },
-      "direct_transition": "biopsy_visit"
+      "direct_transition": "Suspected_Prostate_Cancer"
     },
     "Prostate Cancer Symptom 2": {
       "type": "Symptom",
@@ -488,7 +490,16 @@
       "exact": {
         "quantity": 20
       },
-      "direct_transition": "Prostate_Cancer_Therapy"
+      "distributed_transition": [
+        {
+          "transition": "Stem Cells",
+          "distribution": 0.01
+        },
+        {
+          "transition": "Prostate_Cancer_Therapy",
+          "distribution": 0.99
+        }
+      ]
     },
     "end_chemo_med": {
       "type": "Simple",
@@ -525,8 +536,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
-          "display": "Encounter for problem"
+          "code": "185347001",
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "distributed_transition": [
@@ -546,8 +557,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 314994000,
-          "display": "Metastasis from malignant tumor of prostate (disorder)"
+          "code": "94503003",
+          "display": "Metastatic malignant neoplasm to prostate (disorder)"
         }
       ],
       "direct_transition": "end_cancer_therapy encounter"
@@ -558,7 +569,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 92691004,
+          "code": "92691004",
           "display": "Carcinoma in situ of prostate (disorder)"
         }
       ],
@@ -581,7 +592,7 @@
             {
               "system": "LOINC",
               "code": "2339-0",
-              "display": "Glucose"
+              "display": "Glucose [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -593,7 +604,7 @@
             {
               "system": "LOINC",
               "code": "6299-2",
-              "display": "Urea Nitrogen"
+              "display": "Urea nitrogen [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -604,7 +615,7 @@
             {
               "system": "LOINC",
               "code": "38483-4",
-              "display": "Creatinine"
+              "display": "Creatinine [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL",
@@ -620,7 +631,7 @@
             {
               "system": "LOINC",
               "code": "49765-1",
-              "display": "Calcium"
+              "display": "Calcium [Mass/volume] in Blood"
             }
           ],
           "unit": "mg/dL"
@@ -632,7 +643,7 @@
             {
               "system": "LOINC",
               "code": "2947-0",
-              "display": "Sodium"
+              "display": "Sodium [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -644,7 +655,7 @@
             {
               "system": "LOINC",
               "code": "6298-4",
-              "display": "Potassium"
+              "display": "Potassium [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -656,7 +667,7 @@
             {
               "system": "LOINC",
               "code": "2069-3",
-              "display": "Chloride"
+              "display": "Chloride [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -668,7 +679,7 @@
             {
               "system": "LOINC",
               "code": "20565-8",
-              "display": "Carbon Dioxide"
+              "display": "Carbon dioxide, total [Moles/volume] in Blood"
             }
           ],
           "unit": "mmol/L"
@@ -680,7 +691,7 @@
             {
               "system": "LOINC",
               "code": "33914-3",
-              "display": "Glomerular filtration rate/1.73 sq M.predicted"
+              "display": "Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum or Plasma by Creatinine-based formula (MDRD)"
             }
           ],
           "range": {
@@ -818,7 +829,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 7766007,
+            "code": "7766007",
             "display": "Cloudy urine (finding)"
           }
         },
@@ -827,14 +838,14 @@
           "codes": [
             {
               "system": "LOINC",
-              "code": "5767-9",
+              "code": "34533-0",
               "display": "Odor of Urine"
             }
           ],
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 690701000119101,
+            "code": "690701000119101",
             "display": "Foul smelling urine (finding)"
           }
         },
@@ -850,7 +861,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 7766007,
+            "code": "7766007",
             "display": "Cloudy urine (finding)"
           }
         },
@@ -866,8 +877,8 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 720003003,
-            "display": "Reddish color urine"
+            "code": "720003003",
+            "display": "Reddish color urine (finding)"
           }
         },
         {
@@ -897,7 +908,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167265006,
+            "code": "167265006",
             "display": "Urine glucose test = ++ (finding)"
           }
         },
@@ -928,7 +939,7 @@
           "unit": "{nominal}",
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 275778006,
+            "code": "275778006",
             "display": "Finding of bilirubin in urine (finding)"
           }
         },
@@ -959,7 +970,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167291007,
+            "code": "167291007",
             "display": "Urine ketone test = +++ (finding)"
           }
         },
@@ -1020,7 +1031,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 167277001,
+            "code": "167277001",
             "display": "Urine protein test = +++ (finding)"
           }
         },
@@ -1036,8 +1047,8 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 314138001,
-            "display": "Urine nitrite negative (finding)"
+            "code": "314138001",
+            "display": "Nitrite not detected in urine (finding)"
           }
         },
         {
@@ -1052,7 +1063,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 34436003,
+            "code": "34436003",
             "display": "Blood in urine (finding)"
           }
         },
@@ -1068,8 +1079,8 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 394717006,
-            "display": "Urine leukocyte test negative (finding)"
+            "code": "394717006",
+            "display": "Urine leukocytes not detected (finding)"
           }
         }
       ],
@@ -1082,7 +1093,7 @@
         {
           "system": "LOINC",
           "code": "58410-2",
-          "display": "Complete blood count (hemogram) panel - Blood by Automated count"
+          "display": "CBC panel - Blood by Automated count"
         }
       ],
       "observations": [
@@ -1253,6 +1264,39 @@
         }
       ],
       "direct_transition": "Chemotherapy_Hormone Order"
+    },
+    "Suspected_Prostate_Cancer": {
+      "type": "ConditionOnset",
+      "target_encounter": "biopsy_visit",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "315268008",
+          "display": "Suspected prostate cancer (situation)"
+        }
+      ],
+      "direct_transition": "biopsy_visit"
+    },
+    "End_Suspected_Prostate_Cancer": {
+      "type": "ConditionEnd",
+      "direct_transition": "biopsy_visit_end",
+      "condition_onset": "Suspected_Prostate_Cancer"
+    },
+    "Wellness_Encounter_Reason": {
+      "type": "SetAttribute",
+      "attribute": "wellness_encounter_reason",
+      "direct_transition": "annual_wellness_visit",
+      "value_code": {
+        "system": "SNOMED-CT",
+        "code": "410424005",
+        "display": "Wellness surveillance (regime/therapy)"
+      }
+    },
+    "Stem Cells": {
+      "type": "SetAttribute",
+      "attribute": "bone_marrow",
+      "direct_transition": "Prostate_Cancer_Therapy",
+      "value": true
     }
   },
   "gmf_version": 1

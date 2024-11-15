@@ -71,7 +71,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 276239002,
+          "code": "276239002",
           "display": "Therapy (regime/therapy)"
         }
       ],
@@ -79,13 +79,13 @@
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 91251008,
+          "code": "91251008",
           "display": "Physical therapy procedure (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 228557008,
-          "display": "Cognitive and behavior therapy"
+          "code": "228557008",
+          "display": "Cognitive and behavioral therapy (regime/therapy)"
         }
       ],
       "distributed_transition": [
@@ -161,7 +161,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -194,7 +194,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 307468000,
+            "code": "307468000",
             "display": "Every six hours (qualifier value)"
           }
         ],
@@ -228,7 +228,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -261,7 +261,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -290,7 +290,7 @@
             {
               "system": "LOINC",
               "code": "75893-8",
-              "display": "What number best describes your pain on average in the past week?"
+              "display": "Pain severity in the past week - 0-10 numeric rating [Reported]"
             }
           ],
           "range": {
@@ -305,7 +305,7 @@
             {
               "system": "LOINC",
               "code": "91145-3",
-              "display": "What number best describes how, during the past week, pain has interfered with your enjoyment of life?"
+              "display": "What number best describes how pain has interfered with your enjoyment of life during the past week"
             }
           ],
           "range": {
@@ -320,7 +320,7 @@
             {
               "system": "LOINC",
               "code": "91146-1",
-              "display": "What number best describes how, during the past week, pain has interfered with your general activity?"
+              "display": "What number best describes how pain has interfered with your general activity during the past week"
             }
           ],
           "range": {
@@ -347,11 +347,11 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 278860009,
+          "code": "278860009",
           "display": "Chronic low back pain (finding)"
         }
       ],
-      "direct_transition": "Initial_Prescribing_Encounter_for_Chronic_Pain"
+      "direct_transition": "Chronic_Pain_Reason"
     },
     "End_Initial_Chronic_Pain_Encounter": {
       "type": "EncounterEnd",
@@ -442,7 +442,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 228557008,
+          "code": "228557008",
           "display": "Cognitive and behavioral therapy (regime/therapy)"
         }
       ],
@@ -460,7 +460,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 1121000119107,
+          "code": "1121000119107",
           "display": "Chronic neck pain (finding)"
         }
       ],
@@ -473,7 +473,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 203082005,
+          "code": "203082005",
           "display": "Fibromyalgia (disorder)"
         }
       ],
@@ -486,7 +486,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 278860009,
+          "code": "278860009",
           "display": "Chronic low back pain (finding)"
         }
       ],
@@ -499,7 +499,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 1121000119107,
+          "code": "1121000119107",
           "display": "Chronic neck pain (finding)"
         }
       ],
@@ -512,7 +512,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 203082005,
+          "code": "203082005",
           "display": "Fibromyalgia (disorder)"
         }
       ],
@@ -524,11 +524,11 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 427419006,
+          "code": "427419006",
           "display": "Transformed migraine (disorder)"
         }
       ],
-      "direct_transition": "Initial_Prescribing_Encounter_for_Chronic_Pain",
+      "direct_transition": "Chronic_Pain_Reason",
       "target_encounter": "Initial_Prescribing_Encounter_for_Chronic_Pain"
     },
     "Condition_Migraine_2": {
@@ -538,7 +538,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 427419006,
+          "code": "427419006",
           "display": "Transformed migraine (disorder)"
         }
       ],
@@ -550,7 +550,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 390906007,
+          "code": "390906007",
           "display": "Follow-up encounter (procedure)"
         }
       ],
@@ -563,7 +563,8 @@
           "transition": "PEG_Assessment_Score_2",
           "distribution": 0.5
         }
-      ]
+      ],
+      "reason": "Chronic_Pain_Reason"
     },
     "End_Follow_Up_Encounter_for_Chronic_Pain": {
       "type": "EncounterEnd",
@@ -612,8 +613,8 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 1831000175103,
-            "display": "Every 12 hours as needed (qualifier value)"
+            "code": "1831000175103",
+            "display": "Every twelve hours as required (qualifier value)"
           }
         ],
         "refills": 3
@@ -671,8 +672,8 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 396143001,
-            "display": "Every seventy two hours as needed (qualifier value)"
+            "code": "396143001",
+            "display": "Every seventy two hours (qualifier value)"
           }
         ],
         "refills": 3
@@ -717,7 +718,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -751,7 +752,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -763,19 +764,19 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 276239002,
+          "code": "276239002",
           "display": "Therapy (regime/therapy)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 91251008,
+          "code": "91251008",
           "display": "Physical therapy procedure (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 228557008,
+          "code": "228557008",
           "display": "Cognitive and behavioral therapy (regime/therapy)"
         }
       ],
@@ -821,7 +822,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 229064008,
+          "code": "229064008",
           "display": "Movement therapy (regime/therapy)"
         }
       ],
@@ -846,11 +847,12 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 308335008,
+          "code": "308335008",
           "display": "Patient encounter procedure (procedure)"
         }
       ],
-      "direct_transition": "CBT_Pain_Observation"
+      "direct_transition": "CBT_Pain_Observation",
+      "reason": "Chronic_Pain_Reason"
     },
     "Enter_Physical_Therapy_1": {
       "type": "Delay",
@@ -901,11 +903,12 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 308335008,
+          "code": "308335008",
           "display": "Patient encounter procedure (procedure)"
         }
       ],
-      "direct_transition": "Physical_Therapy_1"
+      "direct_transition": "Physical_Therapy_1",
+      "reason": "Chronic_Pain_Reason"
     },
     "PT_Pain_Observation": {
       "type": "Observation",
@@ -983,7 +986,7 @@
             {
               "system": "LOINC",
               "code": "75893-8",
-              "display": "What number best describes your pain on average in the past week?"
+              "display": "Pain severity in the past week - 0-10 numeric rating [Reported]"
             }
           ],
           "range": {
@@ -998,7 +1001,7 @@
             {
               "system": "LOINC",
               "code": "91145-3",
-              "display": "What number best describes how, during the past week, pain has interfered with your enjoyment of life?"
+              "display": "What number best describes how pain has interfered with your enjoyment of life during the past week"
             }
           ],
           "range": {
@@ -1013,7 +1016,7 @@
             {
               "system": "LOINC",
               "code": "91146-1",
-              "display": "What number best describes how, during the past week, pain has interfered with your general activity?"
+              "display": "What number best describes how pain has interfered with your general activity during the past week"
             }
           ],
           "range": {
@@ -1069,7 +1072,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -1101,7 +1104,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 307468000,
+            "code": "307468000",
             "display": "Every six hours (qualifier value)"
           }
         ],
@@ -1219,7 +1222,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -1252,7 +1255,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225756002,
+            "code": "225756002",
             "display": "Every four hours (qualifier value)"
           }
         ],
@@ -1289,7 +1292,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225757006,
+            "code": "225757006",
             "display": "Every four to six hours (qualifier value)"
           }
         ],
@@ -1322,7 +1325,7 @@
         "instructions": [
           {
             "system": "SNOMED-CT",
-            "code": 225756002,
+            "code": "225756002",
             "display": "Every four hours (qualifier value)"
           }
         ],
@@ -1342,7 +1345,7 @@
           "display": "Pain intensity, Enjoyment of life, General activity (PEG) 3 item pain scale"
         }
       ],
-      "direct_transition": "Addiction",
+      "direct_transition": "End follow up with positive test",
       "observations": [
         {
           "category": "survey",
@@ -1351,7 +1354,7 @@
             {
               "system": "LOINC",
               "code": "75893-8",
-              "display": "What number best describes your pain on average in the past week?"
+              "display": "Pain severity in the past week - 0-10 numeric rating [Reported]"
             }
           ],
           "range": {
@@ -1366,7 +1369,7 @@
             {
               "system": "LOINC",
               "code": "91145-3",
-              "display": "What number best describes how, during the past week, pain has interfered with your enjoyment of life?"
+              "display": "What number best describes how pain has interfered with your enjoyment of life during the past week"
             }
           ],
           "range": {
@@ -1381,7 +1384,7 @@
             {
               "system": "LOINC",
               "code": "91146-1",
-              "display": "What number best describes how, during the past week, pain has interfered with your general activity?"
+              "display": "What number best describes how pain has interfered with your general activity during the past week"
             }
           ],
           "range": {
@@ -1489,7 +1492,7 @@
       ],
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 10828004,
+        "code": "10828004",
         "display": "Positive (qualifier value)"
       },
       "direct_transition": "PEG_Assessment_Score_3"
@@ -1507,7 +1510,7 @@
       ],
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 260385009,
+        "code": "260385009",
         "display": "Negative (qualifier value)"
       },
       "direct_transition": "PEG_Assessment_Score_2"
@@ -1525,7 +1528,7 @@
       ],
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 260385009,
+        "code": "260385009",
         "display": "Negative (qualifier value)"
       },
       "distributed_transition": [
@@ -1554,10 +1557,10 @@
           "display": "Drugs of abuse 5 panel - Urine by Screen method"
         }
       ],
-      "direct_transition": "Addiction",
+      "direct_transition": "End initial encounter with positive result",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 10828004,
+        "code": "10828004",
         "display": "Positive (qualifier value)"
       }
     },
@@ -1567,11 +1570,12 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
+          "code": "185347001",
           "display": "Encounter for problem (procedure)"
         }
       ],
-      "direct_transition": "PEG_Assessment_Score_1"
+      "direct_transition": "PEG_Assessment_Score_1",
+      "reason": "Chronic_Pain_Reason"
     },
     "Addiction": {
       "type": "Delay",
@@ -1683,18 +1687,18 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 1121000119107,
+          "code": "1121000119107",
           "display": "Chronic neck pain (finding)"
         }
       ],
-      "direct_transition": "Initial_Prescribing_Encounter_for_Chronic_Pain"
+      "direct_transition": "Chronic_Pain_Reason"
     },
     "Condition_Chronic_Neck_Pain_4": {
       "type": "ConditionOnset",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 1121000119107,
+          "code": "1121000119107",
           "display": "Chronic neck pain (finding)"
         }
       ],
@@ -1706,11 +1710,11 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 278860009,
+          "code": "278860009",
           "display": "Chronic low back pain (finding)"
         }
       ],
-      "direct_transition": "Initial_Prescribing_Encounter_for_Chronic_Pain",
+      "direct_transition": "Chronic_Pain_Reason",
       "target_encounter": "Initial_Prescribing_Encounter_for_Chronic_Pain"
     },
     "Without_Urine_Drug_Testing": {
@@ -1769,7 +1773,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 50849002,
+          "code": "50849002",
           "display": "Emergency room admission (procedure)"
         }
       ],
@@ -2011,7 +2015,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
+          "code": "185347001",
           "display": "Encounter for problem (procedure)"
         }
       ],
@@ -2032,7 +2036,7 @@
       "direct_transition": "DSM-5_OUD_Diagnostic_Criteria",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 10828004,
+        "code": "10828004",
         "display": "Positive (qualifier value)"
       }
     },
@@ -2503,7 +2507,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -2520,7 +2524,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -2564,7 +2568,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 5602001,
+          "code": "5602001",
           "display": "Opioid abuse (disorder)"
         }
       ],
@@ -2624,7 +2628,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
+          "code": "185347001",
           "display": "Encounter for problem (procedure)"
         }
       ],
@@ -2636,7 +2640,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 5602001,
+          "code": "5602001",
           "display": "Opioid abuse (disorder)"
         }
       ],
@@ -2777,7 +2781,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -2819,7 +2823,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -2850,7 +2854,7 @@
             {
               "system": "LOINC",
               "code": "75893-8",
-              "display": "What number best describes your pain on average in the past week?"
+              "display": "Pain severity in the past week - 0-10 numeric rating [Reported]"
             }
           ],
           "range": {
@@ -2865,7 +2869,7 @@
             {
               "system": "LOINC",
               "code": "91145-3",
-              "display": "What number best describes how, during the past week, pain has interfered with your enjoyment of life?"
+              "display": "What number best describes how pain has interfered with your enjoyment of life during the past week"
             }
           ],
           "range": {
@@ -2880,7 +2884,7 @@
             {
               "system": "LOINC",
               "code": "91146-1",
-              "display": "What number best describes how, during the past week, pain has interfered with your general activity?"
+              "display": "What number best describes how pain has interfered with your general activity during the past week"
             }
           ],
           "range": {
@@ -3044,7 +3048,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -3095,8 +3099,7 @@
           {
             "condition_type": "Date",
             "operator": ">=",
-            "year": 2014,
-            "value": 0
+            "year": 2014
           }
         ]
       },
@@ -3120,7 +3123,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 408919008,
+          "code": "408919008",
           "display": "Psychosocial care (regime/therapy)"
         }
       ],
@@ -3197,6 +3200,27 @@
       ],
       "reason": "Condition_OUD_2",
       "direct_transition": "End_Encounter_OUD_Treatment_Cont"
+    },
+    "End follow up with positive test": {
+      "type": "EncounterEnd",
+      "direct_transition": "Addiction"
+    },
+    "End initial encounter with positive result": {
+      "type": "EncounterEnd",
+      "direct_transition": "Addiction"
+    },
+    "Chronic_Pain_Reason": {
+      "type": "ConditionOnset",
+      "target_encounter": "Initial_Prescribing_Encounter_for_Chronic_Pain",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "82423001",
+          "display": "Chronic pain (finding)"
+        }
+      ],
+      "direct_transition": "Initial_Prescribing_Encounter_for_Chronic_Pain"
     }
-  }
+  },
+  "gmf_version": 2
 }

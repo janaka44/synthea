@@ -154,18 +154,14 @@
         {
           "system": "SNOMED-CT",
           "code": "128613002",
-          "display": "Seizure disorder"
+          "display": "Seizure disorder (disorder)"
         }
       ],
       "direct_transition": "Seizure_Encounter",
-      "remarks": [
-        ""
-      ],
       "assign_to_attribute": "seizure"
     },
     "Seizure_Encounter": {
       "type": "Encounter",
-      "wellness": false,
       "encounter_class": "emergency",
       "reason": "seizure",
       "remarks": [
@@ -175,7 +171,7 @@
         {
           "system": "SNOMED-CT",
           "code": "50849002",
-          "display": "Emergency Room Admission"
+          "display": "Emergency room admission (procedure)"
         }
       ],
       "direct_transition": "History_of_Seizure"
@@ -186,8 +182,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": "703151001",
-          "display": "History of single seizure (situation)"
+          "code": "1290882004",
+          "display": "History of seizure (situation)"
         }
       ],
       "direct_transition": "EEG_Test"
@@ -203,7 +199,7 @@
         {
           "system": "SNOMED-CT",
           "code": "54550000",
-          "display": "Seizure Count Cerebral Cortex Electroencephalogram (EEG)"
+          "display": "Electroencephalogram (procedure)"
         }
       ],
       "complex_transition": [
@@ -238,7 +234,7 @@
         {
           "system": "SNOMED-CT",
           "code": "84757009",
-          "display": "Epilepsy"
+          "display": "Epilepsy (disorder)"
         }
       ],
       "distributed_transition": [
@@ -279,7 +275,7 @@
         {
           "system": "RxNorm",
           "code": "308971",
-          "display": "Carbamazepine[Tegretol]"
+          "display": "carbamazepine 20 MG/ML Oral Suspension [Tegretol]"
         }
       ],
       "assign_to_attribute": "seizure_meds",
@@ -410,18 +406,10 @@
     },
     "Medicine_Encounter": {
       "type": "Encounter",
-      "encounter_class": "outpatient",
       "wellness": true,
       "reason": "seizure",
       "remarks": [
         "Patients start with medication prescription or follow-up."
-      ],
-      "codes": [
-        {
-          "system": "SNOMED-CT",
-          "code": "390906007",
-          "display": "Follow-Up Encounter"
-        }
       ],
       "distributed_transition": [
         {
@@ -458,7 +446,7 @@
         {
           "system": "SNOMED-CT",
           "code": "95281009",
-          "display": "Sudden Cardiac Death"
+          "display": "Sudden cardiac death (disorder)"
         }
       ],
       "direct_transition": "Terminal"

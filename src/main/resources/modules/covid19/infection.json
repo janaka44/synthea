@@ -11,11 +11,11 @@
     "Encounter for Test": {
       "type": "Encounter",
       "encounter_class": "ambulatory",
-      "reason": "",
+      "reason": "Suspected COVID",
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185345009,
+          "code": "185345009",
           "display": "Encounter for symptom (procedure)"
         }
       ],
@@ -45,8 +45,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 840539006,
-          "display": "COVID-19"
+          "code": "840539006",
+          "display": "Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
         }
       ],
       "complex_transition": [
@@ -80,7 +80,6 @@
           ]
         },
         {
-          "distributions": [],
           "transition": "Self Isolation At Home"
         }
       ]
@@ -90,11 +89,11 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 840544004,
-          "display": "Suspected COVID-19"
+          "code": "840544004",
+          "display": "Suspected disease caused by Severe acute respiratory coronavirus 2 (situation)"
         }
       ],
-      "direct_transition": "Apply Face Mask to Patient"
+      "direct_transition": "Encounter for Test"
     },
     "Admission": {
       "type": "CallSubmodule",
@@ -137,7 +136,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 261352009,
+          "code": "261352009",
           "display": "Face mask (physical object)"
         }
       ],
@@ -182,7 +181,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736376001,
+          "code": "736376001",
           "display": "Infectious disease care plan (record artifact)"
         }
       ],
@@ -191,17 +190,17 @@
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 444908001,
+          "code": "444908001",
           "display": "Isolation nursing in negative pressure isolation environment (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 409524006,
+          "code": "409524006",
           "display": "Airborne precautions (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 409526008,
+          "code": "409526008",
           "display": "Personal protective equipment (physical object)"
         }
       ],
@@ -212,7 +211,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736376001,
+          "code": "736376001",
           "display": "Infectious disease care plan (record artifact)"
         }
       ],
@@ -220,12 +219,12 @@
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 409524006,
+          "code": "409524006",
           "display": "Airborne precautions (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 361235007,
+          "code": "361235007",
           "display": "Isolation of infected patient (procedure)"
         }
       ],
@@ -310,11 +309,9 @@
               }
             ]
           },
-          "distributions": [],
           "transition": "Wait for Admission"
         },
         {
-          "distributions": [],
           "transition": "Self Isolation Delay"
         }
       ],
@@ -344,7 +341,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         }
@@ -373,7 +370,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         }
@@ -436,7 +433,7 @@
     "Determine Risk": {
       "submodule": "covid19/determine_risk",
       "type": "CallSubmodule",
-      "direct_transition": "Encounter for Test",
+      "direct_transition": "Suspected COVID",
       "remarks": [
         "Assess patient comorbidities and set attribute (covid19_risk):",
         "  - (high) if patient has comorbidity impacting risks",
@@ -482,7 +479,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 736376001,
+          "code": "736376001",
           "display": "Infectious disease care plan (record artifact)"
         }
       ],
@@ -490,12 +487,12 @@
       "activities": [
         {
           "system": "SNOMED-CT",
-          "code": 409524006,
+          "code": "409524006",
           "display": "Airborne precautions (procedure)"
         },
         {
           "system": "SNOMED-CT",
-          "code": 409526008,
+          "code": "409526008",
           "display": "Personal protective equipment (physical object)"
         }
       ],
@@ -533,7 +530,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         }
@@ -562,7 +559,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260373001,
+            "code": "260373001",
             "display": "Detected (qualifier value)"
           }
         }
@@ -584,7 +581,7 @@
         {
           "system": "LOINC",
           "code": "80381-7",
-          "display": "Influenza virus A and B Ag panel - Nasopharynx by Rapid immunoassay"
+          "display": "Influenza virus A and B Ag panel - Upper respiratory specimen by Rapid immunoassay"
         }
       ],
       "observations": [
@@ -595,12 +592,12 @@
             {
               "system": "LOINC",
               "code": "80382-5",
-              "display": "Influenza virus A Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus A Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         },
@@ -611,12 +608,12 @@
             {
               "system": "LOINC",
               "code": "80383-3",
-              "display": "Influenza virus B Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus B Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260373001,
+            "code": "260373001",
             "display": "Detected (qualifier value)"
           }
         }
@@ -629,7 +626,7 @@
         {
           "system": "LOINC",
           "code": "80381-7",
-          "display": "Influenza virus A and B Ag panel - Nasopharynx by Rapid immunoassay"
+          "display": "Influenza virus A and B Ag panel - Upper respiratory specimen by Rapid immunoassay"
         }
       ],
       "observations": [
@@ -640,12 +637,12 @@
             {
               "system": "LOINC",
               "code": "80382-5",
-              "display": "Influenza virus A Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus A Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260373001,
+            "code": "260373001",
             "display": "Detected (qualifier value)"
           }
         },
@@ -656,12 +653,12 @@
             {
               "system": "LOINC",
               "code": "80383-3",
-              "display": "Influenza virus B Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus B Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         }
@@ -674,7 +671,7 @@
         {
           "system": "LOINC",
           "code": "80381-7",
-          "display": "Influenza virus A and B Ag panel - Nasopharynx by Rapid immunoassay"
+          "display": "Influenza virus A and B Ag panel - Upper respiratory specimen by Rapid immunoassay"
         }
       ],
       "observations": [
@@ -685,12 +682,12 @@
             {
               "system": "LOINC",
               "code": "80382-5",
-              "display": "Influenza virus A Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus A Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         },
@@ -701,12 +698,12 @@
             {
               "system": "LOINC",
               "code": "80383-3",
-              "display": "Influenza virus B Ag [Presence] in Nasopharynx by Rapid immunoassay"
+              "display": "Influenza virus B Ag [Presence] in Upper respiratory specimen by Rapid immunoassay"
             }
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260415000,
+            "code": "260415000",
             "display": "Not detected (qualifier value)"
           }
         }
@@ -772,7 +769,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -788,7 +785,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -804,7 +801,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -820,7 +817,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -836,7 +833,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -852,7 +849,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -868,7 +865,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -884,7 +881,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -900,7 +897,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         }
@@ -929,7 +926,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 10828004,
+            "code": "10828004",
             "display": "Positive (qualifier value)"
           }
         },
@@ -945,7 +942,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -961,7 +958,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -977,7 +974,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -993,7 +990,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1009,7 +1006,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1025,7 +1022,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1041,7 +1038,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1057,7 +1054,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         }
@@ -1086,7 +1083,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1102,7 +1099,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 10828004,
+            "code": "10828004",
             "display": "Positive (qualifier value)"
           }
         },
@@ -1118,7 +1115,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1134,7 +1131,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1150,7 +1147,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1166,7 +1163,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1182,7 +1179,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1198,7 +1195,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         },
@@ -1214,7 +1211,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 260385009,
+            "code": "260385009",
             "display": "Negative (qualifier value)"
           }
         }
@@ -1249,7 +1246,7 @@
     "Record Vitals": {
       "type": "CallSubmodule",
       "submodule": "covid19/measurements_vitals",
-      "direct_transition": "Suspected COVID"
+      "direct_transition": "Apply Face Mask to Patient"
     }
   },
   "gmf_version": 1

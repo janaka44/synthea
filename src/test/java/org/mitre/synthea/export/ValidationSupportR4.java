@@ -40,12 +40,13 @@ public class ValidationSupportR4 extends PrePopulatedValidationSupport {
   /**
    * Defines the custom validation support for various implementation guides.
    * @param ctx the FHIR context
+   * @param usCoreVersion The version of US Core definitions to load, if any
    */
-  public ValidationSupportR4(FhirContext ctx) {
+  public ValidationSupportR4(FhirContext ctx, FhirR4.USCoreVersion usCoreVersion) {
     super(ctx);
 
     try {
-      loadFromDirectory(PROFILE_DIR);
+      loadFromDirectory(PROFILE_DIR, usCoreVersion);
     } catch (Throwable t) {
       throw new RuntimeException(t);
     }
@@ -54,11 +55,11 @@ public class ValidationSupportR4 extends PrePopulatedValidationSupport {
   /**
    * Loads the structure definitions from the given directory.
    * @param rootDir the directory to load structure definitions from
-   * @return a list of structure definitions
+   * @param usCoreVersion The version of US Core definitions to load
    * @throws Throwable when there is an error reading the structure definitions.
    */
-  private void loadFromDirectory(String rootDir) throws Throwable {
-
+  private void loadFromDirectory(String rootDir, FhirR4.USCoreVersion usCoreVersion)
+      throws Throwable {
     IParser jsonParser = FhirR4.getContext().newJsonParser();
     jsonParser.setParserErrorHandler(new StrictErrorHandler());
 
@@ -67,6 +68,21 @@ public class ValidationSupportR4 extends PrePopulatedValidationSupport {
     Files.walk(path, Integer.MAX_VALUE).filter(Files::isReadable).filter(Files::isRegularFile)
         .filter(p -> p.toString().endsWith(".json")).forEach(f -> {
           try {
+
+            // TODO: there has to be a better way to do this
+            if (usCoreVersion != FhirR4.USCoreVersion.v311 && f.toString().contains("uscore3")) {
+              return;
+            }
+            if (usCoreVersion != FhirR4.USCoreVersion.v400 && f.toString().contains("uscore4")) {
+              return;
+            }
+            if (usCoreVersion != FhirR4.USCoreVersion.v501 && f.toString().contains("uscore5")) {
+              return;
+            }
+            if (usCoreVersion != FhirR4.USCoreVersion.v610 && f.toString().contains("uscore6")) {
+              return;
+            }
+
             IBaseResource resource = jsonParser.parseResource(new FileReader(f.toFile()));
             handleResource(resource);
           } catch (FileNotFoundException e) {

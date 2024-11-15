@@ -64,7 +64,6 @@
           ]
         },
         {
-          "distributions": [],
           "transition": "Terminal"
         }
       ],
@@ -411,7 +410,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 389087006,
+          "code": "389087006",
           "display": "Hypoxemia (disorder)"
         }
       ],

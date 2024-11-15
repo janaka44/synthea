@@ -53,7 +53,7 @@ public class QualifyingConditionCodesEligibility implements IPlanEligibility {
   private static List<String> buildQualifyingConditionsFile(String fileName) {
     String resource = null;
     try {
-      resource = Utilities.readResourceAndStripBOM(fileName);
+      resource = Utilities.readResource(fileName, true, true);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -73,5 +73,22 @@ public class QualifyingConditionCodesEligibility implements IPlanEligibility {
       eligibleCodes.addAll(Arrays.asList(codes));
     }
     return eligibleCodes;
+  }
+
+  /**
+   * Gets the earliest occurrence of a qualifying condition
+   * that is active/present on the person.
+   * @param person The person.
+   * @return Start time of the earliest qualifying condition, or Long.MAX_VALUE if not present.
+   */
+  public long getEarliestDiagnosis(Person person) {
+    long earliest = Long.MAX_VALUE;
+    for (String code : qualifyingCodes) {
+      Long onset = person.record.presentOnset(code);
+      if (onset != null) {
+        earliest = Long.min(earliest, onset);
+      }
+    }
+    return earliest;
   }
 }

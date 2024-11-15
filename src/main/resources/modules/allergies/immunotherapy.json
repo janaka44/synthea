@@ -28,7 +28,7 @@
         {
           "system": "SNOMED-CT",
           "code": "170837001",
-          "display": "Allergic disorder initial assessment"
+          "display": "Allergic disorder initial assessment (regime/therapy)"
         }
       ],
       "distributed_transition": [
@@ -46,7 +46,8 @@
             "pre-existing immune conditions (like AIDS), and prohibitive cost."
           ]
         }
-      ]
+      ],
+      "reason": "allergy_unspecified"
     },
     "Immunotherapy_Given": {
       "type": "SetAttribute",
@@ -66,14 +67,14 @@
         {
           "system": "SNOMED-CT",
           "code": "170836005",
-          "display": "Allergic disorder monitoring"
+          "display": "Allergic disorder monitoring (regime/therapy)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
           "code": "182678001",
-          "display": "Hyposensitization to allergens (procedure)"
+          "display": "Allergen immunotherapy (regime/therapy)"
         }
       ],
       "direct_transition": "Benchmark_Allergy_Test"
@@ -89,7 +90,7 @@
         {
           "system": "SNOMED-CT",
           "code": "395142003",
-          "display": "Allergy screening test"
+          "display": "Allergy screening test (procedure)"
         }
       ],
       "direct_transition": "Benchmark_Allergy_Panel"
@@ -156,10 +157,11 @@
         {
           "system": "SNOMED-CT",
           "code": "371883000",
-          "display": "Outpatient procedure"
+          "display": "Outpatient procedure (procedure)"
         }
       ],
-      "direct_transition": "Immunotherapy_Procedure"
+      "direct_transition": "Immunotherapy_Procedure",
+      "reason": "allergy_unspecified"
     },
     "Immunotherapy_Procedure": {
       "type": "Procedure",
@@ -167,7 +169,7 @@
         {
           "system": "SNOMED-CT",
           "code": "180256009",
-          "display": "Subcutaneous immunotherapy"
+          "display": "Subcutaneous immunotherapy (procedure)"
         }
       ],
       "duration": {
@@ -198,10 +200,11 @@
         {
           "system": "SNOMED-CT",
           "code": "170838006",
-          "display": "Allergic disorder follow-up assessment"
+          "display": "Allergic disorder follow-up assessment (regime/therapy)"
         }
       ],
-      "direct_transition": "Immunotherapy_CarePlan_Ends"
+      "direct_transition": "Immunotherapy_CarePlan_Ends",
+      "reason": "allergy_unspecified"
     },
     "Immunotherapy_CarePlan_Ends": {
       "type": "CarePlanEnd",
@@ -242,7 +245,7 @@
         {
           "system": "SNOMED-CT",
           "code": "395142003",
-          "display": "Allergy screening test"
+          "display": "Allergy screening test (procedure)"
         }
       ],
       "direct_transition": "Followup_Allergy_Panel"

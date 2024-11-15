@@ -1,5 +1,6 @@
 {
   "name": "chf_transplant",
+  "specialty": "CARDIOVASCULAR DISEASE (CARDIOLOGY)",
   "remarks": [
     "CHF Transplant Surgery"
   ],
@@ -36,7 +37,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 387713003,
+          "code": "387713003",
           "display": "Surgical procedure (procedure)"
         }
       ],
@@ -51,7 +52,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 32413006,
+          "code": "32413006",
           "display": "Transplantation of heart (procedure)"
         }
       ],
@@ -68,7 +69,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 243063003,
+          "code": "243063003",
           "display": "Postoperative procedure education (procedure)"
         }
       ],

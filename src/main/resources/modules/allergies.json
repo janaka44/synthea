@@ -76,7 +76,7 @@
         "attribute": "visit_allergist",
         "operator": "is not nil"
       },
-      "direct_transition": "Delay_For_Allergist_Initial_Visit"
+      "direct_transition": "Allergy_Unspecified"
     },
     "Delay_For_Allergist_Initial_Visit": {
       "type": "Delay",
@@ -102,7 +102,7 @@
         {
           "system": "SNOMED-CT",
           "code": "185347001",
-          "display": "Encounter for problem"
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "conditional_transition": [
@@ -117,7 +117,8 @@
         {
           "transition": "General_Allergy_CarePlan"
         }
-      ]
+      ],
+      "reason": "Allergy_Unspecified"
     },
     "Administer_Allergy_Test": {
       "type": "Procedure",
@@ -130,7 +131,7 @@
         {
           "system": "SNOMED-CT",
           "code": "395142003",
-          "display": "Allergy screening test"
+          "display": "Allergy screening test (procedure)"
         }
       ],
       "direct_transition": "Allergy_Panel"
@@ -165,7 +166,7 @@
         {
           "system": "SNOMED-CT",
           "code": "58332002",
-          "display": "Allergy education"
+          "display": "Allergy education (procedure)"
         }
       ],
       "conditional_transition": [
@@ -251,6 +252,22 @@
       ],
       "submodule": "allergies/immunotherapy",
       "direct_transition": "Living_With_Allergies"
+    },
+    "Allergy_Unspecified": {
+      "allergy_type": "allergy",
+      "category": "environment",
+      "type": "AllergyOnset",
+      "target_encounter": "Allergist_Initial_Visit",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": 419199007,
+          "display": "Allergy to substance (finding)"
+        }
+      ],
+      "reactions": [],
+      "direct_transition": "Delay_For_Allergist_Initial_Visit",
+      "assign_to_attribute": "allergy_unspecified"
     }
   },
   "gmf_version": 1

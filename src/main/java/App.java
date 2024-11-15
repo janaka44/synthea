@@ -1,6 +1,10 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -9,6 +13,8 @@ import java.util.TimeZone;
 
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.engine.Module;
+import org.mitre.synthea.export.Exporter;
+import org.mitre.synthea.export.flexporter.Mapping;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 
@@ -23,6 +29,7 @@ public class App {
   public static void usage() {
     System.out.println("Usage: run_synthea [options] [state [city]]");
     System.out.println("Options: [-s seed] [-cs clinicianSeed] [-p populationSize]");
+    System.out.println("         [-ps singlePersonSeed]");
     System.out.println("         [-r referenceDate as YYYYMMDD]");
     System.out.println("         [-e endDate as YYYYMMDD]");
     System.out.println("         [-g gender] [-a minAge-maxAge]");
@@ -55,9 +62,11 @@ public class App {
    */
   public static void main(String[] args) throws Exception {
     Generator.GeneratorOptions options = new Generator.GeneratorOptions();
+    Exporter.ExporterRuntimeOptions exportOptions = new Exporter.ExporterRuntimeOptions();
 
     boolean validArgs = true;
     boolean overrideFutureDateError = false;
+    boolean reloadConfig = false;
     if (args != null && args.length > 0) {
       try {
         Queue<String> argsQ = new LinkedList<String>(Arrays.asList(args));
@@ -74,6 +83,9 @@ public class App {
           } else if (currArg.equalsIgnoreCase("-cs")) {
             String value = argsQ.poll();
             options.clinicianSeed = Long.parseLong(value);
+          } else if (currArg.equalsIgnoreCase("-ps")) {
+            String value = argsQ.poll();
+            options.singlePersonSeed = Long.valueOf(value);
           } else if (currArg.equalsIgnoreCase("-r")) {
             String value = argsQ.poll();
             // note that Y = "week year" and y = "year" per the formatting guidelines
@@ -93,6 +105,7 @@ public class App {
           } else if (currArg.equalsIgnoreCase("-p")) {
             String value = argsQ.poll();
             options.population = Integer.parseInt(value);
+            Config.set("generate.default_population", value);
           } else if (currArg.equalsIgnoreCase("-o")) {
             String value = argsQ.poll();
             options.overflow = Boolean.parseBoolean(value);
@@ -121,10 +134,7 @@ public class App {
             String value = argsQ.poll();
             File configFile = new File(value);
             Config.load(configFile);
-            // Any options that are automatically set by reading the configuration
-            // file during options initialization need to be reset here.
-            options.population = Config.getAsInteger("generate.default_population", 1);
-            options.threadPoolSize = Config.getAsInteger("generate.thread_pool_size", -1);
+            reloadConfig = true;
           } else if (currArg.equalsIgnoreCase("-d")) {
             String value = argsQ.poll();
             File localModuleDir = new File(value);
@@ -188,12 +198,42 @@ public class App {
             }
           } else if (currArg.equals("-k")) {
             String value = argsQ.poll();
+            // first check if it's an absolute path, or path relative to .
             File keepPatientsModule = new File(value);
             if (keepPatientsModule.exists()) {
-              options.keepPatientsModulePath = keepPatientsModule;
+              options.keepPatientsModulePath = keepPatientsModule.toPath();
+            } else {
+              // look inside the src/main/resources/keep_modules folder
+              URI keepModulesURI = App.class.getClassLoader().getResource("keep_modules").toURI();
+              Utilities.enableReadingURIFromJar(keepModulesURI);
+              Path possibleLocation = Paths.get(keepModulesURI).resolve(value);
+              if (Files.exists(possibleLocation)) {
+                options.keepPatientsModulePath = possibleLocation;
+              } else {
+                throw new FileNotFoundException(String.format(
+                    "Specified keep-patients file (%s) does not exist", value));
+              }
+            }
+          } else if (currArg.equals("-fm")) {
+            String value = argsQ.poll();
+            File flexporterMappingFile = new File(value);
+            if (flexporterMappingFile.exists()) {
+              Mapping mapping = Mapping.parseMapping(flexporterMappingFile);
+              exportOptions.addFlexporterMapping(mapping);
+              // disable the graalVM warning when FlexporterJavascriptContext is instantiated
+              System.getProperties().setProperty("polyglot.engine.WarnInterpreterOnly", "false");
             } else {
               throw new FileNotFoundException(String.format(
-                  "Specified keep-patients file (%s) does not exist", value));
+                  "Specified flexporter mapping file (%s) does not exist", value));
+            }
+          } else if (currArg.equals("-ig")) {
+            String value = argsQ.poll();
+            File igFile = new File(value);
+            if (igFile.exists()) {
+              RunFlexporter.loadIG(igFile);
+            } else {
+              throw new FileNotFoundException(String.format(
+                  "Specified IG directory (%s) does not exist", value));
             }
           } else if (currArg.startsWith("--")) {
             String configSetting;
@@ -211,6 +251,7 @@ public class App {
             }
 
             Config.set(configSetting, value);
+            reloadConfig = true;
           } else if (options.state == null) {
             options.state = currArg;
           } else {
@@ -225,10 +266,29 @@ public class App {
       }
     }
 
+    if (reloadConfig) {
+      resetOptionsFromConfig(options, exportOptions);
+    }
+
     if (validArgs && validateConfig(options, overrideFutureDateError)) {
-      Generator generator = new Generator(options);
+      Generator generator = new Generator(options, exportOptions);
       generator.run();
     }
+  }
+
+  /**
+   * Reset the fields of the provided options to the current values in the Config.
+   */
+  private static void resetOptionsFromConfig(Generator.GeneratorOptions options,
+      Exporter.ExporterRuntimeOptions exportOptions) {
+    // Any options that are automatically set by reading the configuration
+    // file during options initialization need to be reset here.
+    options.population = Config.getAsInteger("generate.default_population", 1);
+    options.threadPoolSize = Config.getAsInteger("generate.thread_pool_size", -1);
+
+    exportOptions.yearsOfHistory = Config.getAsInteger("exporter.years_of_history", 10);
+    exportOptions.terminologyService = !Config.get("generate.terminology_service_url", "")
+            .isEmpty();
   }
 
   private static boolean validateConfig(Generator.GeneratorOptions options,

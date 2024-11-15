@@ -99,7 +99,7 @@
         {
           "system": "SNOMED-CT",
           "code": "69896004",
-          "display": "Rheumatoid arthritis"
+          "display": "Rheumatoid arthritis (disorder)"
         }
       ],
       "direct_transition": "RA_Diagnosis"
@@ -112,7 +112,7 @@
         {
           "system": "SNOMED-CT",
           "code": "185347001",
-          "display": "Encounter for problem"
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "direct_transition": "RA_CarePlan"
@@ -125,24 +125,24 @@
         {
           "system": "SNOMED-CT",
           "code": "408869004",
-          "display": "Musculoskeletal care"
+          "display": "Musculoskeletal care (regime/therapy)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
           "code": "183301007",
-          "display": "Physical exercises"
+          "display": "Physical exercises (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
           "code": "229580007",
-          "display": "Ice therapy"
+          "display": "Ice therapy (procedure)"
         },
         {
           "system": "SNOMED-CT",
           "code": "226234005",
-          "display": "Healthy diet"
+          "display": "Healthy diet (finding)"
         }
       ],
       "direct_transition": "RA_Nonopioid_Pain_Medication"

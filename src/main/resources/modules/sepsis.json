@@ -11,12 +11,7 @@
     "References: ",
     "1. Hotchkiss RS, Karl IE. The Pathophysiology and Treatment of Sepsis. N Engl J Med. 2003 Jan 9;348(2):138–50. ",
     "2. \tSurviving Sepsis Campaign: International Guidelines for Mana... : Critical Care Medicine [Internet]. [cited 2020 Oct 16]. Available from: https://journals.lww.com/ccmjournal/Fulltext/2017/03000/Surviving_Sepsis_Campaign___International.15.aspx",
-    "3. \tDellinger RP, Schorr CA, Levy MM. A Users’ Guide to the 2016 Surviving Sepsis Guidelines. Crit Care Med. 2017 Mar;45(3):381–385. ",
-    "",
-    "",
-    "",
-    "",
-    ""
+    "3. \tDellinger RP, Schorr CA, Levy MM. A Users’ Guide to the 2016 Surviving Sepsis Guidelines. Crit Care Med. 2017 Mar;45(3):381–385. "
   ],
   "states": {
     "Initial": {
@@ -31,7 +26,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 91302008,
+          "code": "91302008",
           "display": "Sepsis (disorder)"
         }
       ],
@@ -116,7 +111,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 430701006,
+          "code": "430701006",
           "display": "Resuscitation using intravenous fluid (procedure)"
         }
       ],
@@ -135,8 +130,8 @@
       "codes": [
         {
           "system": "LOINC",
-          "code": "59032-3",
-          "display": "Lactate [Mass/volume] in Blood"
+          "code": "32693-4",
+          "display": "Lactate [Moles/volume] in Blood"
         }
       ],
       "conditional_transition": [
@@ -147,8 +142,8 @@
             "codes": [
               {
                 "system": "LOINC",
-                "code": "59032-3",
-                "display": "Lactate [Mass/volume] in Blood"
+                "code": "32693-4",
+                "display": "Lactate [Moles/volume] in Blood"
               }
             ],
             "operator": ">=",
@@ -194,7 +189,7 @@
           ],
           "value_code": {
             "system": "SNOMED-CT",
-            "code": 10828004,
+            "code": "10828004",
             "display": "Positive (qualifier value)"
           }
         }
@@ -255,7 +250,7 @@
         "quantity": 1,
         "unit": "days"
       },
-      "direct_transition": "Terminal",
+      "direct_transition": "End Encounter by Death",
       "remarks": [
         "Overall mortality of sepsis is 12.5% among patients with sepsis. Ref: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6250243/#:~:text=The%20higher%20prevalence%20of%20sepsis,sepsis%20and%20septic%20shock%2C%20respectively."
       ]
@@ -265,7 +260,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 76571007,
+          "code": "76571007",
           "display": "Septic shock (disorder)"
         }
       ],
@@ -273,7 +268,7 @@
     },
     "Capillary_Refill": {
       "type": "Observation",
-      "category": "vital-signs",
+      "category": "exam",
       "unit": "",
       "codes": [
         {
@@ -285,7 +280,7 @@
       "direct_transition": "Pulse_Oximetry",
       "value_code": {
         "system": "SNOMED-CT",
-        "code": 50427001,
+        "code": "50427001",
         "display": "Increased capillary filling time (finding)"
       }
     },
@@ -296,8 +291,13 @@
       "codes": [
         {
           "system": "LOINC",
-          "code": "2713-6",
-          "display": "Oxygen Saturation"
+          "code": "2708-6",
+          "display": "Oxygen saturation in Arterial blood"
+        },
+        {
+          "system": "LOINC",
+          "code": "59408-5",
+          "display": "Oxygen saturation in Arterial blood by Pulse oximetry"
         }
       ],
       "direct_transition": "Lactate_Level1",
@@ -325,7 +325,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 67782005,
+          "code": "67782005",
           "display": "Acute respiratory distress syndrome (disorder)"
         }
       ],
@@ -355,8 +355,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 40617009,
-          "display": "Artificial respiration (procedure)"
+          "code": "40617009",
+          "display": "Artificial ventilation (regime/therapy)"
         }
       ],
       "duration": {
@@ -389,8 +389,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 305351004,
-          "display": "Admit to ICU (procedure)"
+          "code": "305351004",
+          "display": "Admission to intensive care unit (procedure)"
         }
       ],
       "duration": {
@@ -406,7 +406,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 449214001,
+          "code": "449214001",
           "display": "Transfer to stepdown unit (procedure)"
         }
       ],
@@ -425,8 +425,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 185347001,
-          "display": "Encounter for problem"
+          "code": "185347001",
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "direct_transition": "Blood_Cultures"
@@ -438,8 +438,8 @@
       "codes": [
         {
           "system": "LOINC",
-          "code": "59032-3",
-          "display": "Lactate [Mass/volume] in Blood"
+          "code": "32693-4",
+          "display": "Lactate [Moles/volume] in Blood"
         }
       ],
       "direct_transition": "Fluid_Resuscitation",
@@ -490,7 +490,7 @@
         {
           "system": "LOINC",
           "code": "85354-9",
-          "display": "Blood Pressure"
+          "display": "Blood pressure panel with all children optional"
         }
       ],
       "observations": [
@@ -532,8 +532,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 243174005,
-          "display": "Weaning from mechanically assisted ventilation (procedure)"
+          "code": "243174005",
+          "display": "Weaning from mechanically assisted ventilation (regime/therapy)"
         }
       ],
       "duration": {
@@ -562,7 +562,7 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": 430701006,
+          "code": "430701006",
           "display": "Resuscitation using intravenous fluid (procedure)"
         }
       ],
@@ -591,7 +591,7 @@
         {
           "system": "LOINC",
           "code": "85354-9",
-          "display": "Blood Pressure"
+          "display": "Blood pressure panel with all children optional"
         }
       ],
       "observations": [
@@ -634,6 +634,10 @@
       "direct_transition": "Vancomycin",
       "administration": true,
       "reason": "Sepsis"
+    },
+    "End Encounter by Death": {
+      "type": "EncounterEnd",
+      "direct_transition": "Terminal"
     }
   },
   "gmf_version": 2

@@ -54,11 +54,11 @@
           },
           "distributions": [
             {
-              "distribution": 0.009975,
+              "distribution": 0.990025,
               "transition": "Potential_Homelessness"
             },
             {
-              "distribution": 0.990025,
+              "distribution": 0.009975,
               "transition": "Begin_Homelessness"
             }
           ]
@@ -81,7 +81,7 @@
       "type": "SetAttribute",
       "attribute": "homeless",
       "value": true,
-      "direct_transition": "Homelessness_Counter"
+      "direct_transition": "Homeless_Condition"
     },
     "Homelessness_Counter": {
       "type": "Counter",
@@ -195,10 +195,11 @@
         {
           "system": "SNOMED-CT",
           "code": "210098006",
-          "display": "Domiciliary or rest home patient evaluation and management"
+          "display": "Domiciliary or rest home patient evaluation and management (procedure)"
         }
       ],
-      "direct_transition": "Information_Gathering"
+      "direct_transition": "Information_Gathering",
+      "reason": "Homeless_Condition"
     },
     "Information_Gathering": {
       "type": "Procedure",
@@ -217,7 +218,7 @@
     },
     "Question_1": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -231,40 +232,28 @@
     },
     "Question_2": {
       "type": "Simple",
-      "remarks": [
-        "simple random statistics here until we have a real HIV model",
-        "National Alliance to End Homelessness estimates that 3.4% of homeless people are HIV+",
-        "compared to 0.4% in the general population. (2006 data)",
-        "http://www.nationalhomeless.org/factsheets/hiv.html"
-      ],
-      "complex_transition": [
+      "conditional_transition": [
         {
-          "condition": {
-            "condition_type": "PriorState",
-            "name": "Question_2_Positive"
-          },
           "transition": "Question_2_Positive",
-          "remarks": [
-            "If they previously said they are HIV+ then stick with it"
-          ]
+          "condition": {
+            "condition_type": "Active Condition",
+            "codes": [
+              {
+                "system": "SNOMED-CT",
+                "code": "86406008",
+                "display": "Human immunodeficiency virus infection (disorder)"
+              }
+            ]
+          }
         },
         {
-          "distributions": [
-            {
-              "distribution": 0.966,
-              "transition": "Question_2_Negative"
-            },
-            {
-              "distribution": 0.034,
-              "transition": "Question_2_Positive"
-            }
-          ]
+          "transition": "Question_2_Negative"
         }
       ]
     },
     "Question_2_Positive": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -280,7 +269,7 @@
     },
     "Question_2_Negative": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -317,7 +306,7 @@
         "in the real world homelessness has a stronger asssociation with drug abuse",
         "see http://www.nationalhomeless.org/factsheets/addiction.pdf "
       ],
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -333,7 +322,7 @@
     },
     "Question_3_Nonabuser": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -349,7 +338,7 @@
     },
     "Question_4": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -381,7 +370,7 @@
     },
     "Question_5_Yes": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -397,7 +386,7 @@
     },
     "Question_5_No": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
@@ -413,12 +402,12 @@
     },
     "Question_6": {
       "type": "Observation",
-      "category": "social-history",
+      "category": "survey",
       "codes": [
         {
           "system": "LOINC",
           "code": "46240-8",
-          "display": "History of Hospitalizations+Outpatient visits"
+          "display": "History of Hospitalizations+Outpatient visits Narrative"
         }
       ],
       "range": {
@@ -436,7 +425,23 @@
       "type": "SetAttribute",
       "attribute": "homeless",
       "value": false,
-      "direct_transition": "Potential_Homelessness"
+      "direct_transition": "End_Homeless_Condition"
+    },
+    "Homeless_Condition": {
+      "type": "ConditionOnset",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "32911000",
+          "display": "Homeless (finding)"
+        }
+      ],
+      "direct_transition": "Homelessness_Counter"
+    },
+    "End_Homeless_Condition": {
+      "type": "ConditionEnd",
+      "direct_transition": "Potential_Homelessness",
+      "condition_onset": "Homeless_Condition"
     }
   },
   "gmf_version": 1

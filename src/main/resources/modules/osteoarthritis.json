@@ -56,7 +56,7 @@
         {
           "system": "SNOMED-CT",
           "code": "201834006",
-          "display": "Localized, primary osteoarthritis of the hand"
+          "display": "Localized, primary osteoarthritis of the hand (disorder)"
         }
       ],
       "direct_transition": "OA_Diagnosis"
@@ -69,7 +69,7 @@
         {
           "system": "SNOMED-CT",
           "code": "239873007",
-          "display": "Osteoarthritis of knee"
+          "display": "Osteoarthritis of knee (disorder)"
         }
       ],
       "direct_transition": "OA_Diagnosis"
@@ -82,7 +82,7 @@
         {
           "system": "SNOMED-CT",
           "code": "239872002",
-          "display": "Osteoarthritis of hip"
+          "display": "Osteoarthritis of hip (disorder)"
         }
       ],
       "direct_transition": "OA_Diagnosis"
@@ -96,7 +96,7 @@
         {
           "system": "SNOMED-CT",
           "code": "185347001",
-          "display": "Encounter for problem"
+          "display": "Encounter for problem (procedure)"
         }
       ],
       "direct_transition": "Pain Vital"
@@ -109,22 +109,22 @@
         {
           "system": "SNOMED-CT",
           "code": "408869004",
-          "display": "Musculoskeletal care"
+          "display": "Musculoskeletal care (regime/therapy)"
         }
       ],
       "activities": [
         {
           "system": "SNOMED-CT",
           "code": "386294003",
-          "display": "Joint mobility exercises"
+          "display": "Joint mobility exercises (regime/therapy)"
         },
         {
           "system": "SNOMED-CT",
           "code": "266694003",
-          "display": "Heat therapy"
+          "display": "Heat therapy (procedure)"
         }
       ],
-      "direct_transition": "OA_Pain_Medication"
+      "direct_transition": "Assign DME"
     },
     "OA_Pain_Medication": {
       "type": "MedicationOrder",
@@ -268,7 +268,6 @@
           ]
         },
         {
-          "distributions": [],
           "transition": "Non_Veteran"
         }
       ]
@@ -428,6 +427,61 @@
         "low": 5,
         "high": 10
       }
+    },
+    "Assign DME": {
+      "type": "Simple",
+      "complex_transition": [
+        {
+          "condition": {
+            "condition_type": "Or",
+            "conditions": [
+              {
+                "condition_type": "PriorState",
+                "name": "OA_Of_The_Hip"
+              },
+              {
+                "condition_type": "PriorState",
+                "name": "OA_Of_The_Knee"
+              }
+            ]
+          },
+          "distributions": [
+            {
+              "transition": "Wheelchair",
+              "distribution": 0.54
+            },
+            {
+              "transition": "Walker",
+              "distribution": 0.46
+            }
+          ]
+        },
+        {
+          "transition": "OA_Pain_Medication"
+        }
+      ],
+      "remarks": [
+        "Based on sample from CMS claims."
+      ]
+    },
+    "Wheelchair": {
+      "type": "CallSubmodule",
+      "submodule": "dme/wheelchair",
+      "direct_transition": "Finish DME"
+    },
+    "Walker": {
+      "type": "Device",
+      "code": {
+        "system": "SNOMED-CT",
+        "code": 705406009,
+        "display": "Walker (physical object)"
+      },
+      "assign_to_attribute": "osteoarthritis_dme",
+      "direct_transition": "Finish DME"
+    },
+    "Finish DME": {
+      "type": "Simple",
+      "direct_transition": "OA_Pain_Medication"
     }
   },
   "gmf_version": 1
